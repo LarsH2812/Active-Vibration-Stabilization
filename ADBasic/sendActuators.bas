@@ -1,5 +1,5 @@
 '<ADbasic Header, Headerversion 001.001>
-' Process_Number                 = 3
+' Process_Number                 = 2
 ' Initial_Processdelay           = 4000
 ' Eventsource                    = Timer
 ' Control_long_Delays_for_Stop   = No
@@ -76,15 +76,10 @@ init:
   SOUTHZ = 3
   EASTZ = 1
   WESTZ = 2
-  tick_old = read_timer()
 
 event:
   
-  tick = read_timer()
-  delta = tick - tick_old
-  time_ticks = time_ticks + delta
-  time_s = time_s + cvt_Tick2ms(delta)
-  tick_old = tick
+
 
   EASTXVAL  = driveActuator(EASTX , EASTXAMP , FREQUENCYEX, PHASEEX)
   WESTXVAL  = driveActuator(WESTX , WESTXAMP , FREQUENCYWX, PHASEWX)
@@ -106,14 +101,13 @@ finish:
   SOUTHZVAL = driveActuator(SOUTHZ, 0 , 0, 0)
   EASTZVAL  = driveActuator(EASTZ , 0 , 0, 0)
   WESTZVAL  = driveActuator(WESTZ , 0 , 0, 0)
-     
+  exit
 FUNCTION CalcVoltage(ADCValue) as FLOAT
   CalcVoltage = ADCValue*VMAX/ADCMAX - 0.5*VMAX
 ENDFUNCTION
 FUNCTION calcADC(Voltage) as LONG
   CalcADC = Voltage*ADCMAX/VMAX + 0.5*ADCMAX
 ENDFUNCTION
-
 FUNCTION driveActuator(Actuator, Amplitude, Frequency, Phase) as LONG
   DIM omega, phi as Float
   DIM voltage as LONG
@@ -124,6 +118,4 @@ FUNCTION driveActuator(Actuator, Amplitude, Frequency, Phase) as LONG
   driveActuator = voltage
 ENDFUNCTION
 
-FUNCTION cvt_Tick2ms(Tick) as FLOAT
-  cvt_Tick2ms = Tick / MAXFREQ
-ENDFUNCTION
+
