@@ -1,8 +1,15 @@
-import sys,traceback, time, math, sqlite3
+import math
+import sqlite3
+import sys
+import time
+import traceback
+
+import control
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+import numpy as np
 from ADwin import ADwin, ADwinError
-import numpy as np, control
 from peakdetect import peakdetect
-import matplotlib.pyplot as plt, matplotlib.animation as animation
 
 plt.ion()
 
