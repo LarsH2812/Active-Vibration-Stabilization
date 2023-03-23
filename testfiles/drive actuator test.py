@@ -37,12 +37,13 @@ DISTANCES = {
 }
 
 AMAT = np.matrix([
-    [0, 1, 0, -DISTANCES['gnz'],                 0, -DISTANCES['gnx'],],    # northY
-    [0, 0, 1, -DISTANCES['gny'],  DISTANCES['gnx'],                 0,],    # northZ
-    [1, 0, 0,                 0,  DISTANCES['gez'],  DISTANCES['gey'],],    # eastX
-    [0, 0, 1, -DISTANCES['gey'],  DISTANCES['gex'],                 0,],    # eastZ
-    [1, 0, 0,                 0, -DISTANCES['gtz'],  DISTANCES['gty'],],    # topX
-    [0, 1, 0,  DISTANCES['gtz'],                 0, -DISTANCES['gtx'],],    # topY
+#    x | y | z |        rx         |        ry         |          rz
+    [0 , 1 , 0 , -DISTANCES['gnz'] ,                 0 , -DISTANCES['gnx'],],    # northY
+    [0 , 0 , 1 , -DISTANCES['gny'] ,  DISTANCES['gnx'] ,                 0,],    # northZ
+    [1 , 0 , 0 ,                 0 ,  DISTANCES['gez'] ,  DISTANCES['gey'],],    # eastX
+    [0 , 0 , 1 , -DISTANCES['gey'] ,  DISTANCES['gex'] ,                 0,],    # eastZ
+    [1 , 0 , 0 ,                 0 , -DISTANCES['gtz'] ,  DISTANCES['gty'],],    # topX
+    [0 , 1 , 0 ,  DISTANCES['gtz'] ,                 0 , -DISTANCES['gtx'],],    # topY
 ])
 AMAT_INV = np.linalg.inv(AMAT)
 ZMAT = np.matrix([
@@ -237,10 +238,10 @@ def readData():
             
         updatePlot()
 
-def calculate6DoF(t,ex,tx,ny,ty,nz,ez):
+def calculate6DoF(t,ny,nz,ex,ez,tx,ty):
     pass
         
-    meas = np.matrix([ex,tx,ny,ty,nz,ez])
+    meas = np.matrix([ny,nz,ex,ez,tx,ty])
     meas /= 1000
 
 
