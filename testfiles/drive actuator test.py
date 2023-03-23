@@ -94,9 +94,31 @@ def initDatabase():
     meastime = time.strftime("%H%M%S", meastime)
     db = sqlite3.connect(f'data\{date} - {meastime}.db')
     cur = db.cursor()
-    cur.execute("CREATE TABLE guralp(t REAL PRIMARY KEY, topX REAL, topY REAL, topZ REAL, northX REAL, northY REAL, northZ REAL, eastX REAL, eastY REAL, eastZ REAL)")
-    cur.execute("CREATE TABLE fourier(f REAL PRIMARY KEY, txamp REAL, txphase REAL, tyamp REAL, typhase REAL, tzamp REAL, tzphase REAL, nxamp REAL, nxphase REAL, nyamp REAL, nyphase REAL, nzamp REAL, nzphase REAL, examp REAL, exphase REAL, eyamp REAL, eyphase REAL, ezamp REAL, ezphase REAL)")
-    cur.execute("CREATE TABLE extras(t REAL PRIMARY KEY, stepper REAL, accoustic REAL)")
+    cur.execute("""
+CREATE TABLE guralp(
+    t REAL PRIMARY KEY, 
+    topX REAL, topY REAL,topZ REAL, 
+    northX REAL, northY REAL, northZ REAL, 
+    eastX REAL, eastY REAL, eastZ REAL
+);
+CREATE TABLE 6DoF(
+    t REAL PRIMARY KEY,
+    x REAL,
+    y REAL,
+    z REAL,
+    rx REAL,
+    ry REAL,
+    rz REAL,
+    FOREIGN KEY(t) REFERENCES guralp(t)
+);
+CREATE TABLE fourier(
+    f REAL PRIMARY KEY,
+    txamp REAL, txphase REAL, tyamp REAL, typhase REAL, tzamp REAL, tzphase REAL, 
+    nxamp REAL, nxphase REAL, nyamp REAL, nyphase REAL, nzamp REAL, nzphase REAL, 
+    examp REAL, exphase REAL, eyamp REAL, eyphase REAL, ezamp REAL, ezphase REAL
+);
+CREATE TABLE extras(t REAL PRIMARY KEY, stepper REAL, accoustic REAL);
+""")
     db.commit()
 
 def initfig1():
@@ -156,10 +178,20 @@ def main():
 
     try:
         # Read the data
+        tstart = time.time()
+        freqs = np.linspace(0,5,30)
+        i = 0
         while True:
             try:
                 readData()
-                updatePlot()
+                
+
+                if (time.time() - tstart) >= 60:
+                    i += 1
+                    adwinAmps['eastZ'](2.5)
+                    adwinFrequencies['eastZ'](freqs[i])
+                    fig1manager.set_window_title(f'6DoF-Data [RUNNING] ({freqs[i]})')
+                    tstart = time.time()
                 plt.pause(0.01)
                         
         
@@ -200,7 +232,7 @@ def readData():
         cur.executemany('INSERT INTO extras VALUES (?,?,?)', np.transpose(data).tolist())
         db.commit()
             
-        # updatePlot()
+        updatePlot()
 
 def saveFigures():
     '''Save the figure as a svg and the data as a json file'''
@@ -215,7 +247,6 @@ def updatePlot(COMPLETETIME:bool = False):
     columns = {}
     for col in np.transpose(cur.execute('PRAGMA table_info(guralp);').fetchall())[1]:
         columns[col] = 0
-
     query = """
     SELECT *
     FROM guralp
@@ -229,9 +260,11 @@ def updatePlot(COMPLETETIME:bool = False):
     ret = cur.execute(query).fetchall()
     if not len(ret) > 0:
         return
+    
     t = np.transpose(ret)[0]
     x,y,z,rx,ry,rz = [np.array([]) for i in range(6)]
-    for ar in ret:
+    total = len(ret)
+    for nar, ar in enumerate(ret):
         for i,k in enumerate(columns.keys()):
             columns[k] = ar[i]
         meas = np.matrix([[columns['eastX']],[columns['topX']],[columns['northY']],[columns['topY']],[columns['northZ']],[columns['eastZ']]])
@@ -245,6 +278,9 @@ def updatePlot(COMPLETETIME:bool = False):
         rx = np.append(rx, RX)
         ry = np.append(ry, RY)
         rz = np.append(rz, RZ)
+
+        if COMPLETETIME:
+            print(f'processed {nar+1} out of {total}')
         
     linex.set_data(t, x)
     liney.set_data(t, y)
@@ -257,6 +293,9 @@ def updatePlot(COMPLETETIME:bool = False):
 
     
     plt.pause(0.01)
+
+def calculate6DoF(ex,tx,by,ty,nz,ez):
+    
 
 def calculateZamps(amplitude):
     Fz = np.matrix([[0],
@@ -293,7 +332,6 @@ if __name__ == '__main__':
         # updatePlot(True)
         fig1manager.set_window_title("6DoF-Data [DONE]")
         updatePlot(True)
-
         
         plt.ioff()
         plt.show()
