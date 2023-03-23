@@ -234,7 +234,7 @@ def readData():
         cur.executemany('INSERT INTO extras VALUES (?,?,?)', np.transpose(data).tolist())
         db.commit()
 
-        calculate6DoF(dataT, dataEX, dataTX, dataNY, dataTY, dataNZ, dataEZ)
+        calculate6DoF(dataT, dataNY, dataNZ, dataEX, dataEZ, dataTX, dataTY)
             
         updatePlot()
 
