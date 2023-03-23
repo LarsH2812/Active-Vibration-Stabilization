@@ -25,13 +25,31 @@ print(MEASUREMENTTIME)
 adwin = ADwin(DeviceNo= 1,raiseExceptions= 1, useNumpyArrays= 1)
 
 BOOTFILE     = 'c:\ADwin\ADwin9.btl'
-PROCESS1FILE = 'ADBasic/readGuralps.T91'
-PROCESS2FILE = 'ADBasic/readExtras.T92'
-PROCESS3FILE = 'ADBasic/sendActuators.T93',
+PROCESS1FILE = 'ADBasic/readTime.T91'
+PROCESS2FILE = 'ADBasic/sendActuators.T92'
+PROCESS3FILE = 'ADBasic/readGuralps.T93'
+PROCESS4FILE = 'ADBasic/readExtras.T94'
 
-ZMAT = np.matrix([[-1.745,	0.727,	1.534],
-                  [-0.712,	1.02 , -0.724],
-                  [ 1.0  ,  1.0  ,  1.0  ]])
+DISTANCES = {
+'gnx':1.3750, 'gex':0.0000, 'gtx':0.0559,
+'gny':0.0000, 'gey':1.3750, 'gty':0.3449,
+'gnz':0.7528, 'gez':0.7528, 'gtz':3.2772,
+}
+
+AMAT = np.matrix([
+    [1, 0, 0,                 0,  DISTANCES['gez'],  DISTANCES['gey'],],
+    [1, 0, 0,                 0, -DISTANCES['gtz'],  DISTANCES['gty'],],
+    [0, 1, 0, -DISTANCES['gnz'],                 0, -DISTANCES['gnx'],],
+    [0, 1, 0,  DISTANCES['gtz'],                 0, -DISTANCES['gtx'],],
+    [0, 0, 1, -DISTANCES['gey'],  DISTANCES['gex'],                 0,],
+    [0, 0, 1, -DISTANCES['gny'],  DISTANCES['gnx'],                 0,],
+])
+AMAT_INV = np.linalg.inv(AMAT)
+ZMAT = np.matrix([
+    [-1.745, 0.727,  1.534],
+    [-0.712, 1.02 , -0.724],
+    [ 1.0  , 1.0  ,  1.0  ],
+])
 ZMAT_INV = np.linalg.inv(ZMAT)
 M = 24000 #[kg]
 
@@ -82,19 +100,27 @@ def initDatabase():
     db.commit()
 
 def initfig1():
-    global fig1, fig1manager, plotx, ploty, plotz, plotrx, plotry, plotrz
+    global fig1, fig1manager
+    global plotx, ploty, plotz, plotrx, plotry, plotrz
+    global linex, liney, linez, linerx, linery, linerz
+
     fig1 = plt.figure('6DoF-Data [INITIALIZING]', figsize=(15, 10))
     fig1manager = plt.get_current_fig_manager()
 
     #Create a Figure
-    plotx    = plt.subplot2grid((6,6), (0,0), colspan=6)
-    ploty    = plt.subplot2grid((6,6), (1,0), colspan=6, sharex=plotx, sharey=plotx,) 
-    plotz    = plt.subplot2grid((6,6), (2,0), colspan=6, sharex=plotx, sharey=plotx,)
-    plotrx   = plt.subplot2grid((6,6), (3,0), colspan=6, sharex=plotx, sharey=plotx,)
-    plotry   = plt.subplot2grid((6,6), (4,0), colspan=6, sharex=plotx, sharey=plotx,)
-    plotrz   = plt.subplot2grid((6,6), (5,0), colspan=6, sharex=plotx, sharey=plotx,)
+    plotx    = plt.subplot2grid((6,6), (0,0), colspan=6, title= '$x$')
+    ploty    = plt.subplot2grid((6,6), (1,0), colspan=6, title= '$y$', sharex=plotx, sharey=plotx,) 
+    plotz    = plt.subplot2grid((6,6), (2,0), colspan=6, title= '$z$', sharex=plotx, sharey=plotx,)
+    plotrx   = plt.subplot2grid((6,6), (3,0), colspan=6, title= '$\omega_x$', sharex=plotx, sharey=plotx,)
+    plotry   = plt.subplot2grid((6,6), (4,0), colspan=6, title= '$\omega_y$', sharex=plotx, sharey=plotx,)
+    plotrz   = plt.subplot2grid((6,6), (5,0), colspan=6, title= '$\omega_z$', sharex=plotx, sharey=plotx,)
 
-
+    linex, = plotx.plot([],[], 'b')
+    liney, = ploty.plot([],[], 'b')
+    linez, = plotz.plot([],[], 'b')
+    linerx, = plotrx.plot([],[], 'b')
+    linery, = plotry.plot([],[], 'b')
+    linerz, = plotrz.plot([],[], 'b')
 
     fig1manager.window.showMaximized()
     plt.tight_layout()
@@ -106,11 +132,13 @@ def initAdwin():
     adwin.Load_Process(Filename=PROCESS1FILE)   # Load process 1
     adwin.Load_Process(Filename=PROCESS2FILE)   # Load process 2
     adwin.Load_Process(Filename=PROCESS3FILE)   # Load process 3
+    adwin.Load_Process(Filename=PROCESS4FILE)   # Load process 4
     adwin.Set_Par(80, 1)
     # Start the program
     adwin.Start_Process(ProcessNo= 1)           # Start process 1
     adwin.Start_Process(ProcessNo= 2)           # Start process 2
     adwin.Start_Process(ProcessNo= 3)           # Start process 3
+    adwin.Start_Process(ProcessNo= 4)           # Start process 3
 
 def init():
     '''Initialize '''
@@ -122,17 +150,20 @@ def init():
     initAdwin()
     
 def main():
-    global FOURCALCTIME, sVect, r1Vect, r2Vect, r3Vect, lineStepper, lineAccoustic, plotStepper, plotAccoustic, plotVect, plotftx, plotfty, plotftz, plotfnx, plotfny, plotfnz, plotfex, plotfey, plotfez, lineftx, linefty, lineftz, linefnx, linefny, linefnz, linefex, linefey, linefez, fig1, fig2, fig3, FOURIERCALCULATED, SAMPLEPOINTS, adwin
+    global FOURCALCTIME, fig1, FOURIERCALCULATED, SAMPLEPOINTS, adwin
     
     fig1manager.set_window_title('6DoF-Data [RUNNING]')
 
     try:
         # Read the data
-        while gettime() <= FOURCALCTIME:
-            readData()
+        while True:
+            try:
+                readData()
+                plt.pause(0.01)
                         
         
-
+            except KeyboardInterrupt:
+                break
 
     except KeyboardInterrupt as ke:
         error = {'type': type(ke), 'str' :traceback.format_exc()}
@@ -140,6 +171,7 @@ def main():
     except Exception as e:
         error = {'type': type(e), 'str' :traceback.format_exc()}
         print(f'type: {error["type"]} \n{error["str"]}')
+
 def gettime():
     adwintime = cur.execute('SELECT MAX(t) FROM guralp').fetchone()[0]
     adwintime = adwintime if adwintime is not None else 0
@@ -167,7 +199,7 @@ def readData():
         cur.executemany('INSERT INTO extras VALUES (?,?,?)', np.transpose(data).tolist())
         db.commit()
             
-        updatePlot()
+        # updatePlot()
 
 def saveFigures():
     '''Save the figure as a svg and the data as a json file'''
@@ -179,6 +211,10 @@ def saveFigures():
 
 
 def updatePlot(COMPLETETIME:bool = False):
+    columns = {}
+    for col in np.transpose(cur.execute('PRAGMA table_info(guralp);').fetchall())[1]:
+        columns[col] = 0
+
     query = """
     SELECT *
     FROM guralp
@@ -189,20 +225,34 @@ def updatePlot(COMPLETETIME:bool = False):
     FROM guralp
     ORDER BY t DESC;
     """
+    ret = cur.execute(query).fetchall()
+    if not len(ret) > 0:
+        return
+    t = np.transpose(ret)[0]
+    x,y,z,rx,ry,rz = [np.array([]) for i in range(6)]
+    for ar in ret:
+        for i,k in enumerate(columns.keys()):
+            columns[k] = ar[i]
+        meas = np.matrix([[columns['eastX']],[columns['topX']],[columns['northY']],[columns['topY']],[columns['northZ']],[columns['eastZ']]])
+        meas /= 1000
 
-    cur.execute("""
-    PRAGMA table_info(guralp);
-    """)
-    names = np.transpose(cur.fetchall())[1]
-    cur.execute(query)
-    ret = np.transpose(cur.fetchall())
+        X,Y,Z,RX,RY,RZ = AMAT_INV * meas
 
-    for name, data in zip(names, ret):
-        if name == 't':
-            plotx.set_xlim(ret[0][-1], ret[0][0])
-            continue
-        eval(f"{name}.set_data(ret[0], data)")
-        eval(f"t{name}.set_data(ret[0], data)")
+        x  = np.append( x,  X)
+        y  = np.append( y,  Y)
+        z  = np.append( z,  Z)
+        rx = np.append(rx, RX)
+        ry = np.append(ry, RY)
+        rz = np.append(rz, RZ)
+
+        linex.set_data(t, x)
+        liney.set_data(t, y)
+        linez.set_data(t, z)
+        linerx.set_data(t, rx)
+        linery.set_data(t, ry)
+        linerz.set_data(t, rz)
+
+    
     plt.pause(0.01)
 
 def calculateZamps(amplitude):
@@ -242,11 +292,8 @@ if __name__ == '__main__':
         # Turn off interactive mode
 
 
-        updatePlot(True)
+        # updatePlot(True)
         fig1manager.set_window_title("6DoF-Data [DONE]")
-        plotx.legend(loc= 'upper right')
-        ploty.legend(loc = 'upper right')
-        plotz.legend(loc= 'upper right')
 
         
         plt.ioff()
