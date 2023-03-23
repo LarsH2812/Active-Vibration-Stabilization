@@ -109,6 +109,6 @@ SUB storeData()
     DATA_8  = FPAR_8
     DATA_9  = FPAR_9
     DATA_10 = FPAR_10
-    PAR_40 = FIFO_FULL(10)
+    PAR_15 = FIFO_FULL(10)
   ENDIF
 ENDSUB

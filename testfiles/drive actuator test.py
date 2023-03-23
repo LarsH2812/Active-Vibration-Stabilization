@@ -159,6 +159,7 @@ def main():
         while True:
             try:
                 readData()
+                updatePlot()
                 plt.pause(0.01)
                         
         
@@ -244,13 +245,15 @@ def updatePlot(COMPLETETIME:bool = False):
         rx = np.append(rx, RX)
         ry = np.append(ry, RY)
         rz = np.append(rz, RZ)
+        
+    linex.set_data(t, x)
+    liney.set_data(t, y)
+    linez.set_data(t, z)
+    linerx.set_data(t, rx)
+    linery.set_data(t, ry)
+    linerz.set_data(t, rz)
 
-        linex.set_data(t, x)
-        liney.set_data(t, y)
-        linez.set_data(t, z)
-        linerx.set_data(t, rx)
-        linery.set_data(t, ry)
-        linerz.set_data(t, rz)
+    plotx.set_xlim(t[-1], t[0]);plotx.set_ylim(np.array([x,y,z,rx,ry,rz]).min(),np.array([x,y,z,rx,ry,rz]).max())
 
     
     plt.pause(0.01)
@@ -271,11 +274,6 @@ def setZs(amplitude, phase, frequency):
     adwinFrequencies['southZ'](frequency)
     adwinFrequencies['westZ'](frequency)
 
-
-
-
-
-
 if __name__ == '__main__':
     init()
     main()
@@ -294,6 +292,7 @@ if __name__ == '__main__':
 
         # updatePlot(True)
         fig1manager.set_window_title("6DoF-Data [DONE]")
+        updatePlot(True)
 
         
         plt.ioff()
@@ -301,6 +300,5 @@ if __name__ == '__main__':
         plt.pause(0.001)
         # Close the figure
         plt.close()
-        saveFigures()
     # Close the program
     sys.exit()
