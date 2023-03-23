@@ -94,14 +94,15 @@ def initDatabase():
     meastime = time.strftime("%H%M%S", meastime)
     db = sqlite3.connect(f'data\{date} - {meastime}.db')
     cur = db.cursor()
-    cur.execute("""
+    cur.executescript("""
+BEGIN;
 CREATE TABLE guralp(
     t REAL PRIMARY KEY, 
     topX REAL, topY REAL,topZ REAL, 
     northX REAL, northY REAL, northZ REAL, 
     eastX REAL, eastY REAL, eastZ REAL
 );
-CREATE TABLE 6DoF(
+CREATE TABLE DoF(
     t REAL PRIMARY KEY,
     x REAL,
     y REAL,
@@ -118,8 +119,8 @@ CREATE TABLE fourier(
     examp REAL, exphase REAL, eyamp REAL, eyphase REAL, ezamp REAL, ezphase REAL
 );
 CREATE TABLE extras(t REAL PRIMARY KEY, stepper REAL, accoustic REAL);
+COMMIT;
 """)
-    db.commit()
 
 def initfig1():
     global fig1, fig1manager
@@ -232,11 +233,11 @@ def readData():
         cur.executemany('INSERT INTO extras VALUES (?,?,?)', np.transpose(data).tolist())
         db.commit()
 
-        calculate6DoF(dataEX, dataTX, dataNY, dataTY, dataNZ, dataEZ)
+        calculate6DoF(dataT, dataEX, dataTX, dataNY, dataTY, dataNZ, dataEZ)
             
         updatePlot()
 
-def calculate6DoF(ex,tx,ny,ty,nz,ez):
+def calculate6DoF(t,ex,tx,ny,ty,nz,ez):
     pass
         
     meas = np.matrix([ex,tx,ny,ty,nz,ez])
@@ -244,8 +245,10 @@ def calculate6DoF(ex,tx,ny,ty,nz,ez):
 
 
     outmat = AMAT_INV * meas
-
-    print(outmat)
+    outmat = np.array(outmat)
+    outmat = np.array([t,outmat[0],outmat[1],outmat[2],outmat[3],outmat[4],outmat[5]])
+    cur.executemany('INSERT INTO DoF VALUES (?,?,?,?,?,?,?)', np.transpose(outmat))
+    db.commit()
 
 
 
@@ -259,43 +262,22 @@ def saveFigures():
 
 
 def updatePlot(COMPLETETIME:bool = False):
-    columns = {}
-    for col in np.transpose(cur.execute('PRAGMA table_info(guralp);').fetchall())[1]:
-        columns[col] = 0
     query = """
     SELECT *
-    FROM guralp
+    FROM DoF
     ORDER BY t DESC
     LIMIT 5000;
     """ if not COMPLETETIME else """
     SELECT *
-    FROM guralp
+    FROM DoF
     ORDER BY t DESC;
     """
     ret = cur.execute(query).fetchall()
     if not len(ret) > 0:
         return
     
-    t = np.transpose(ret)[0]
-    x,y,z,rx,ry,rz = [np.array([]) for i in range(6)]
+    t,x,y,z,rx,ry,rz= np.transpose(ret)
     total = len(ret)
-    for nar, ar in enumerate(ret):
-        for i,k in enumerate(columns.keys()):
-            columns[k] = ar[i]
-        meas = np.matrix([[columns['eastX']],[columns['topX']],[columns['northY']],[columns['topY']],[columns['northZ']],[columns['eastZ']]])
-        meas /= 1000
-
-        X,Y,Z,RX,RY,RZ = AMAT_INV * meas
-
-        x  = np.append( x,  X)
-        y  = np.append( y,  Y)
-        z  = np.append( z,  Z)
-        rx = np.append(rx, RX)
-        ry = np.append(ry, RY)
-        rz = np.append(rz, RZ)
-
-        if COMPLETETIME:
-            print(f'processed {nar+1} out of {total}')
         
     linex.set_data(t, x)
     liney.set_data(t, y)
