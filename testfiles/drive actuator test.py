@@ -231,8 +231,23 @@ def readData():
         data = np.array([dataT, dataStepper, dataAccoustic])
         cur.executemany('INSERT INTO extras VALUES (?,?,?)', np.transpose(data).tolist())
         db.commit()
+
+        calculate6DoF(dataEX, dataTX, dataNY, dataTY, dataNZ, dataEZ)
             
         updatePlot()
+
+def calculate6DoF(ex,tx,ny,ty,nz,ez):
+    pass
+        
+    meas = np.matrix([ex,tx,ny,ty,nz,ez])
+    meas /= 1000
+
+
+    outmat = AMAT_INV * meas
+
+    print(outmat)
+
+
 
 def saveFigures():
     '''Save the figure as a svg and the data as a json file'''
@@ -294,8 +309,7 @@ def updatePlot(COMPLETETIME:bool = False):
     
     plt.pause(0.01)
 
-def calculate6DoF(ex,tx,by,ty,nz,ez):
-    
+
 
 def calculateZamps(amplitude):
     Fz = np.matrix([[0],
