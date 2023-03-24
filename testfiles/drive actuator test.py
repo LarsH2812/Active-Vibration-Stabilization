@@ -38,18 +38,19 @@ DISTANCES = {
 
 AMAT = np.matrix([
 #    x | y | z |        rx         |        ry         |          rz
-    [0 , 1 , 0 , -DISTANCES['gnz'] ,                 0 , -DISTANCES['gnx'],],    # northY
-    [0 , 0 , 1 , -DISTANCES['gny'] ,  DISTANCES['gnx'] ,                 0,],    # northZ
-    [1 , 0 , 0 ,                 0 ,  DISTANCES['gez'] ,  DISTANCES['gey'],],    # eastX
-    [0 , 0 , 1 , -DISTANCES['gey'] ,  DISTANCES['gex'] ,                 0,],    # eastZ
-    [1 , 0 , 0 ,                 0 , -DISTANCES['gtz'] ,  DISTANCES['gty'],],    # topX
-    [0 , 1 , 0 ,  DISTANCES['gtz'] ,                 0 , -DISTANCES['gtx'],],    # topY
+    [0 , 1 , 0 , -DISTANCES['gnz'] ,                 0 , -DISTANCES['gnx']],    # northY
+    [0 , 0 , 1 , -DISTANCES['gny'] ,  DISTANCES['gnx'] ,                 0],    # northZ
+    [1 , 0 , 0 ,                 0 ,  DISTANCES['gez'] ,  DISTANCES['gey']],    # eastX
+    [0 , 0 , 1 , -DISTANCES['gey'] ,  DISTANCES['gex'] ,                 0],    # eastZ
+    [1 , 0 , 0 ,                 0 , -DISTANCES['gtz'] ,  DISTANCES['gty']],    # topX
+    [0 , 1 , 0 ,  DISTANCES['gtz'] ,                 0 , -DISTANCES['gtx']],    # topY
 ])
 AMAT_INV = np.linalg.inv(AMAT)
 ZMAT = np.matrix([
-    [-1.745, 0.727,  1.534],
-    [-0.712, 1.02 , -0.724],
-    [ 1.0  , 1.0  ,  1.0  ],
+#     Fe    |  Fs    | Fw
+    [ 1     ,  1     , 1    ],  # sum(Fz)
+    [-1.745 ,  0.727 , 1.534],  # sum(Mx)
+    [ 0.712 , -1.02  , 0.724],  # sum(My)
 ])
 ZMAT_INV = np.linalg.inv(ZMAT)
 M = 24000 #[kg]
@@ -295,10 +296,12 @@ def updatePlot(COMPLETETIME:bool = False):
 
 
 def calculateZamps(amplitude):
-    Fz = np.matrix([[0],
-                    [0],
-                    [M * amplitude]])
-    return (ZMAT_INV * Fz)
+    Fz = np.matrix([[amplitude],
+                    [0        ],
+                    [0        ]])
+    out = np.array(ZMAT_INV * Fz)
+    return print(out)
+
 def setZs(amplitude, phase, frequency):
     adwinAmps['eastZ'](amplitude[0,0])
     adwinAmps['southZ'](amplitude[1,0])
