@@ -134,14 +134,6 @@ def initfig1():
     fig1.subplots_adjust(hspace=0)
     fig1manager = plt.get_current_fig_manager()
 
-    #Create a Figure
-    # plotx    = plt.subplot2grid((6,6), (0,0), colspan=6,)
-    # ploty    = plt.subplot2grid((6,6), (1,0), colspan=6, sharex=plotx, sharey=plotx,) 
-    # plotz    = plt.subplot2grid((6,6), (2,0), colspan=6, sharex=plotx, sharey=plotx,)
-    # plotrx   = plt.subplot2grid((6,6), (3,0), colspan=6, sharex=plotx, sharey=plotx,)
-    # plotry   = plt.subplot2grid((6,6), (4,0), colspan=6, sharex=plotx, sharey=plotx,)
-    # plotrz   = plt.subplot2grid((6,6), (5,0), colspan=6, sharex=plotx, sharey=plotx,)
-
     linex, = plotx.plot([],[], 'b')
     liney, = ploty.plot([],[], 'b')
     linez, = plotz.plot([],[], 'b')
@@ -150,9 +142,6 @@ def initfig1():
     linerz, = plotrz.plot([],[], 'b')
 
     fig1manager.window.showMaximized()
-    
-    
-
 
 def initAdwin():
     # Load the program
@@ -191,19 +180,21 @@ def main():
         while True:
             try:
                 readData()
+
+                calculateZamps(2.5)
                 
 
-                if (time.time() - tstart) >= 60:
-                    i += 1
+                # if (time.time() - tstart) >= 60:
+                #     i += 1
 
-                    zamps = calculateZamps(2.5)
+                #     zamps = calculateZamps(2.5)
 
-                    adwinAmps['eastZ'](2.5)
-                    adwinFrequencies['eastZ'](freqs[i])
-                    fig1manager.set_window_title(f'6DoF-Data [RUNNING] ({freqs[i]})')
-                    tstart = time.time()
+                #     adwinAmps['eastZ'](2.5)
+                #     adwinFrequencies['eastZ'](freqs[i])
+                #     fig1manager.set_window_title(f'6DoF-Data [RUNNING] ({freqs[i]})')
+                #     tstart = time.time()
 
-                    plotx.axvline(x = (tstart-t0), label= f'$t={(t0-tstart)}[s], f={freqs[i]}[Hz]$')
+                #     plotx.axvline(x = (tstart-t0), label= f'$t={(t0-tstart)}[s], f={freqs[i]}[Hz]$')
                 plt.pause(0.01)
                         
         
