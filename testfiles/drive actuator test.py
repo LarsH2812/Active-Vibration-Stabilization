@@ -128,16 +128,18 @@ def initfig1():
     global plotx, ploty, plotz, plotrx, plotry, plotrz
     global linex, liney, linez, linerx, linery, linerz
 
-    fig1 = plt.figure('6DoF-Data [INITIALIZING]', figsize=(15, 10))
+    fig1, (plotx, ploty,plotz, plotrx,plotry,plotrz) = plt.subplots(6,1, sharex=True, sharey=True)
+    plt.tight_layout()
+    fig1.subplots_adjust(hspace=0)
     fig1manager = plt.get_current_fig_manager()
 
     #Create a Figure
-    plotx    = plt.subplot2grid((6,6), (0,0), colspan=6, title= '$x$')
-    ploty    = plt.subplot2grid((6,6), (1,0), colspan=6, title= '$y$', sharex=plotx, sharey=plotx,) 
-    plotz    = plt.subplot2grid((6,6), (2,0), colspan=6, title= '$z$', sharex=plotx, sharey=plotx,)
-    plotrx   = plt.subplot2grid((6,6), (3,0), colspan=6, title= '$\omega_x$', sharex=plotx, sharey=plotx,)
-    plotry   = plt.subplot2grid((6,6), (4,0), colspan=6, title= '$\omega_y$', sharex=plotx, sharey=plotx,)
-    plotrz   = plt.subplot2grid((6,6), (5,0), colspan=6, title= '$\omega_z$', sharex=plotx, sharey=plotx,)
+    # plotx    = plt.subplot2grid((6,6), (0,0), colspan=6,)
+    # ploty    = plt.subplot2grid((6,6), (1,0), colspan=6, sharex=plotx, sharey=plotx,) 
+    # plotz    = plt.subplot2grid((6,6), (2,0), colspan=6, sharex=plotx, sharey=plotx,)
+    # plotrx   = plt.subplot2grid((6,6), (3,0), colspan=6, sharex=plotx, sharey=plotx,)
+    # plotry   = plt.subplot2grid((6,6), (4,0), colspan=6, sharex=plotx, sharey=plotx,)
+    # plotrz   = plt.subplot2grid((6,6), (5,0), colspan=6, sharex=plotx, sharey=plotx,)
 
     linex, = plotx.plot([],[], 'b')
     liney, = ploty.plot([],[], 'b')
@@ -147,7 +149,8 @@ def initfig1():
     linerz, = plotrz.plot([],[], 'b')
 
     fig1manager.window.showMaximized()
-    plt.tight_layout()
+    
+    
 
 
 def initAdwin():
@@ -181,6 +184,7 @@ def main():
     try:
         # Read the data
         tstart = time.time()
+        t0 = time.time()
         freqs = np.linspace(0,5,30)
         i = 0
         while True:
@@ -188,12 +192,17 @@ def main():
                 readData()
                 
 
-                # if (time.time() - tstart) >= 60:
-                #     i += 1
-                #     adwinAmps['eastZ'](2.5)
-                #     adwinFrequencies['eastZ'](freqs[i])
-                #     fig1manager.set_window_title(f'6DoF-Data [RUNNING] ({freqs[i]})')
-                #     tstart = time.time()
+                if (time.time() - tstart) >= 60:
+                    i += 1
+
+                    zamps = calculateZamps(2.5)
+
+                    adwinAmps['eastZ'](2.5)
+                    adwinFrequencies['eastZ'](freqs[i])
+                    fig1manager.set_window_title(f'6DoF-Data [RUNNING] ({freqs[i]})')
+                    tstart = time.time()
+
+                    plotx.axvline(x = (tstart-t0), label= f'$t={(t0-tstart)}[s], f={freqs[i]}[Hz]$')
                 plt.pause(0.01)
                         
         
@@ -253,13 +262,14 @@ def calculate6DoF(t,ny,nz,ex,ez,tx,ty):
 
 
 
-def saveFigures():
+def saveFigures(prefix:str = ''):
     '''Save the figure as a svg and the data as a json file'''
     if error is None:
 
         filename = time.strftime('Guralp Sensor Data - %Y%m%d%H%M%S')
-        fig1.savefig(f'data/Guralp/svg/{filename}.svg', format='svg')
-        fig1.savefig(f'data/Guralp/png/{filename}.png', format='png')
+        prefix = f'[{prefix}]' if prefix is not '' else ''
+        fig1.savefig(f'data/Guralp/svg/{prefix}{filename}.svg', format='svg')
+        fig1.savefig(f'data/Guralp/png/{prefix}{filename}.png', format='png')
 
 
 def updatePlot(COMPLETETIME:bool = False):
@@ -287,8 +297,8 @@ def updatePlot(COMPLETETIME:bool = False):
     linery.set_data(t, ry)
     linerz.set_data(t, rz)
 
-    plotx.set_xlim(t[-1], t[0]);plotx.set_ylim(np.array([x,y,z,rx,ry,rz]).min(),np.array([x,y,z,rx,ry,rz]).max())
-
+    plotx.set_xlim(t[-1], t[0]);plotx.set_ylim(1.05*np.array([x,y,z,rx,ry,rz]).min(),1.05*np.array([x,y,z,rx,ry,rz]).max())
+    plotx.set_yticks(np.linspace(0.95*np.array([x,y,z,rx,ry,rz]).min(),0.95*np.array([x,y,z,rx,ry,rz]).max(),5))
     
     plt.pause(0.01)
 
@@ -329,9 +339,11 @@ if __name__ == '__main__':
         # updatePlot(True)
         fig1manager.set_window_title("6DoF-Data [DONE]")
         updatePlot(True)
+        saveFigures()
         
         plt.ioff()
         plt.show()
+        saveFigures('specific view')
         plt.pause(0.001)
         # Close the figure
         plt.close()
