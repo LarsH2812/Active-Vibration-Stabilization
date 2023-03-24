@@ -188,12 +188,12 @@ def main():
                 readData()
                 
 
-                if (time.time() - tstart) >= 60:
-                    i += 1
-                    adwinAmps['eastZ'](2.5)
-                    adwinFrequencies['eastZ'](freqs[i])
-                    fig1manager.set_window_title(f'6DoF-Data [RUNNING] ({freqs[i]})')
-                    tstart = time.time()
+                # if (time.time() - tstart) >= 60:
+                #     i += 1
+                #     adwinAmps['eastZ'](2.5)
+                #     adwinFrequencies['eastZ'](freqs[i])
+                #     fig1manager.set_window_title(f'6DoF-Data [RUNNING] ({freqs[i]})')
+                #     tstart = time.time()
                 plt.pause(0.01)
                         
         
