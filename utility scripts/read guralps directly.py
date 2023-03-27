@@ -27,9 +27,10 @@ print(MEASUREMENTTIME)
 adwin = ADwin(DeviceNo= 1,raiseExceptions= 1, useNumpyArrays= 1)
 
 BOOTFILE     = 'c:\ADwin\ADwin9.btl'
-PROCESS1FILE = 'ADBasic/readGuralps.T91'
-PROCESS2FILE = 'ADBasic/readExtras.T92'
-PROCESS3FILE = 'ADBasic/sendActuators.T93',
+PROCESS1FILE = 'ADBasic/readTime.T91'
+PROCESS2FILE = 'ADBasic/sendActuators.T92'
+PROCESS3FILE = 'ADBasic/readGuralps.T93'
+PROCESS4FILE = 'ADBasic/readExtras.T94'
 
 ZMAT = np.matrix([[-1.745,	0.727,	1.534],
                   [-0.712,	1.02 , -0.724],
@@ -96,33 +97,33 @@ def initfig1():
     plotz   = plt.subplot2grid((2,3), (0,2), sharex=plotxyz, sharey=plotxyz, )
 
     topX, = plotx.plot([],[], '#ff0000', label= 'Top X')
-    northX, = plotx.plot([],[], '#aa0000', label= 'North X')
-    eastX, = plotx.plot([],[], '#550000', label= 'East X')
+    topY, = plotx.plot([],[], '#aa0000', label= 'Top Y')
+    topZ, = plotx.plot([],[], '#550000', label= 'Top Z')
     ax, = plotx.plot([],[], 'k--', label= 'Average X')
 
-    plotx.set_title('X')
+    plotx.set_title('top')
     plotx.set_xlabel('Time (s)')
     plotx.set_ylabel('A (V)')
     plotx.set_xlim(0, 10)
     plotx.set_ylim(-1.5, 1.5)
 
-    topY, = ploty.plot([],[], '#00ff00', label= 'Top Y')
+    northX, = ploty.plot([],[], '#00ff00', label= 'North X')
     northY, = ploty.plot([],[], '#00aa00', label= 'North Y')
-    eastY, = ploty.plot([],[], '#005500', label= 'East Y')
+    northZ, = ploty.plot([],[], '#005500', label= 'North Z')
     ay, = ploty.plot([],[], 'k--', label= 'Average Y')
 
-    ploty.set_title('Y')
+    ploty.set_title('north')
     ploty.set_xlabel('Time (s)')
     ploty.set_ylabel('A (V)')
     ploty.set_xlim(0, 10)
     ploty.set_ylim(-1.5, 1.5)
 
-    topZ, = plotz.plot([],[], '#0000ff', label= 'Top Z')
-    northZ, = plotz.plot([],[], '#0000aa', label= 'North Z')
+    eastX, = plotz.plot([],[], '#0000ff', label= 'East X')
+    eastY, = plotz.plot([],[], '#0000aa', label= 'East Y')
     eastZ, = plotz.plot([],[], '#000055', label= 'East Z')
     az, = plotz.plot([],[], 'k--', label= 'Average Z')
 
-    plotz.set_title('Z')
+    plotz.set_title('east')
     plotz.set_xlabel('Time (s)')
     plotz.set_ylabel('A (V)')
     plotz.set_xlim(0, 10)
@@ -233,11 +234,13 @@ def initAdwin():
     adwin.Load_Process(Filename=PROCESS1FILE)   # Load process 1
     adwin.Load_Process(Filename=PROCESS2FILE)   # Load process 2
     adwin.Load_Process(Filename=PROCESS3FILE)   # Load process 3
+    adwin.Load_Process(Filename=PROCESS4FILE)   # Load process 4
     adwin.Set_Par(80, 1)
     # Start the program
     adwin.Start_Process(ProcessNo= 1)           # Start process 1
     adwin.Start_Process(ProcessNo= 2)           # Start process 2
     adwin.Start_Process(ProcessNo= 3)           # Start process 3
+    adwin.Start_Process(ProcessNo= 4)           # Start process 4
 
 def init():
     '''Initialize '''
@@ -271,7 +274,7 @@ def main():
         while True:
             try:
                 readData()
-                if time.time-tstart >= 60:
+                if time.time()-tstart >= 180:
                     break
             except KeyboardInterrupt:
                 break

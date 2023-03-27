@@ -184,17 +184,24 @@ def main():
                 if (time.time() - tstart) >= 60:
                     i += 1
 
-                    [Fe, Fs, Fw] = calculateZamps(2.5)
-                    adwinAmps['eastZ'](Fe)
-                    adwinAmps['southZ'](Fs)
-                    adwinAmps['westZ'](Fw)
+                    # [Fe, Fs, Fw] = calculateZamps(10)
+                    # adwinAmps['eastZ'](Fe)
+                    # adwinAmps['southZ'](Fs)
+                    # adwinAmps['westZ'](Fw)
 
                     
                     adwinFrequencies['eastZ'](freqs[i])
+                    adwinFrequencies['southZ'](freqs[i])
+                    adwinFrequencies['westZ'](freqs[i])
                     fig1manager.set_window_title(f'6DoF-Data [RUNNING] ({freqs[i]})')
                     tstart = time.time()
 
-                    plotx.axvline(x = (tstart-t0), label= f'$t={(t0-tstart)}[s], f={freqs[i]}[Hz]$')
+                    plotx.axvline(x = (tstart-t0))
+                    ploty.axvline(x = (tstart-t0))
+                    plotz.axvline(x = (tstart-t0))
+                    plotrx.axvline(x = (tstart-t0))
+                    plotry.axvline(x = (tstart-t0))
+                    plotrz.axvline(x = (tstart-t0))
                 plt.pause(0.01)
                         
         
@@ -288,9 +295,9 @@ def updatePlot(COMPLETETIME:bool = False):
     linerx.set_data(t, rx)
     linery.set_data(t, ry)
     linerz.set_data(t, rz)
-
-    plotx.set_xlim(t[-1], t[0]);plotx.set_ylim(1.05*np.array([x,y,z,rx,ry,rz]).min(),1.05*np.array([x,y,z,rx,ry,rz]).max())
-    plotx.set_yticks(np.linspace(0.95*np.array([x,y,z,rx,ry,rz]).min(),0.95*np.array([x,y,z,rx,ry,rz]).max(),5))
+    outerlim = max(abs(np.array([x,y,z,rx,ry,rz]).min()),np.array([x,y,z,rx,ry,rz]).max())
+    plotx.set_xlim(t[-1], t[0]);plotx.set_ylim(-1.05*outerlim,1.05*outerlim)
+    plotx.set_yticks(np.linspace(-0.95*outerlim,0.95*outerlim,5))
     
     plt.pause(0.01)
 
