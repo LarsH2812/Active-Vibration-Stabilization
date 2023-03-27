@@ -181,20 +181,20 @@ def main():
             try:
                 readData()
 
-                calculateZamps(2.5)
-                
+                if (time.time() - tstart) >= 60:
+                    i += 1
 
-                # if (time.time() - tstart) >= 60:
-                #     i += 1
+                    [Fe, Fs, Fw] = calculateZamps(2.5)
+                    adwinAmps['eastZ'](Fe)
+                    adwinAmps['southZ'](Fs)
+                    adwinAmps['westZ'](Fw)
 
-                #     zamps = calculateZamps(2.5)
+                    
+                    adwinFrequencies['eastZ'](freqs[i])
+                    fig1manager.set_window_title(f'6DoF-Data [RUNNING] ({freqs[i]})')
+                    tstart = time.time()
 
-                #     adwinAmps['eastZ'](2.5)
-                #     adwinFrequencies['eastZ'](freqs[i])
-                #     fig1manager.set_window_title(f'6DoF-Data [RUNNING] ({freqs[i]})')
-                #     tstart = time.time()
-
-                #     plotx.axvline(x = (tstart-t0), label= f'$t={(t0-tstart)}[s], f={freqs[i]}[Hz]$')
+                    plotx.axvline(x = (tstart-t0), label= f'$t={(t0-tstart)}[s], f={freqs[i]}[Hz]$')
                 plt.pause(0.01)
                         
         
@@ -301,7 +301,7 @@ def calculateZamps(amplitude):
                     [0        ],
                     [0        ]])
     out = np.array(ZMAT_INV * Fz)
-    return print(out)
+    return out
 
 def setZs(amplitude, phase, frequency):
     adwinAmps['eastZ'](amplitude[0,0])
