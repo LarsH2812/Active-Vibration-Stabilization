@@ -177,17 +177,24 @@ def main():
         t0 = time.time()
         freqs = np.linspace(0,5,30)
         i = 0
+        tdur = 1/freqs[1] * 5
+        print(tdur)
         while True:
             try:
                 readData()
 
-                if (time.time() - tstart) >= 60:
+                if (time.time() - tstart) >= (tdur):
                     i += 1
+                    tdur = 1/freqs[i] * 5
+                    print(tdur)
+                    
+                    if i == len(freqs):
+                        break
 
-                    # [Fe, Fs, Fw] = calculateZamps(10)
-                    # adwinAmps['eastZ'](Fe)
-                    # adwinAmps['southZ'](Fs)
-                    # adwinAmps['westZ'](Fw)
+                    [Fe, Fs, Fw] = calculateZamps(1)
+                    adwinAmps['eastZ'](Fe)
+                    adwinAmps['southZ'](Fs)
+                    adwinAmps['westZ'](Fw)
 
                     
                     adwinFrequencies['eastZ'](freqs[i])
@@ -202,6 +209,7 @@ def main():
                     plotrx.axvline(x = (tstart-t0))
                     plotry.axvline(x = (tstart-t0))
                     plotrz.axvline(x = (tstart-t0))
+                    
                 plt.pause(0.01)
                         
         
@@ -242,7 +250,7 @@ def readData():
         cur.executemany('INSERT INTO extras VALUES (?,?,?)', np.transpose(data).tolist())
         db.commit()
 
-        calculate6DoF(dataT, dataNY, dataNZ, dataEX, dataEZ, dataTX, dataTY)
+        calculate6DoF(dataT, -dataNY, dataNZ, -dataEX, dataEZ, -dataTX, -dataTY)
             
         updatePlot()
 
@@ -295,7 +303,7 @@ def updatePlot(COMPLETETIME:bool = False):
     linerx.set_data(t, rx)
     linery.set_data(t, ry)
     linerz.set_data(t, rz)
-    outerlim = max(abs(np.array([x,y,z,rx,ry,rz]).min()),np.array([x,y,z,rx,ry,rz]).max())
+    outerlim = 10/1000
     plotx.set_xlim(t[-1], t[0]);plotx.set_ylim(-1.05*outerlim,1.05*outerlim)
     plotx.set_yticks(np.linspace(-0.95*outerlim,0.95*outerlim,5))
     

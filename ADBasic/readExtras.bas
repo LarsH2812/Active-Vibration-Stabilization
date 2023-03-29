@@ -14,7 +14,7 @@
 #DEFINE FREQ 40000000 '[Hz]
 #DEFINE MAXPOINTS 5000
 #DEFINE ADCMAX 2^16
-#DEFINE VMAX 10 '[V]
+#DEFINE VMAX 20 '[V]
 
 DIM DATA_20[5000] AS FLOAT AS FIFO
 DIM DATA_21[5000] AS FLOAT AS FIFO
@@ -31,11 +31,8 @@ event:
   _ = ADC(15)
   PAR_21 = ADC(14)
 
-
-  
   data_20 = CalcVoltage(PAR_20)
   data_21 = CalcVoltage(PAR_21)
-
 
   PAR_41 = FIFO_FULL(20)
   
@@ -44,7 +41,8 @@ event:
   endif
     
 FUNCTION CalcVoltage(ADCValue) as FLOAT
-  DIM ADCval as LONG
-  ADCval = ADCValue - 0.5 * ADCMAX
-  CalcVoltage = ADCval * VMAX / ADCMAX
+  CalcVoltage = ADCValue*VMAX/ADCMAX - 0.5*VMAX
+ENDFUNCTION
+FUNCTION calcADC(Voltage) as LONG
+  CalcADC = Voltage*ADCMAX/VMAX + 0.5*ADCMAX
 ENDFUNCTION

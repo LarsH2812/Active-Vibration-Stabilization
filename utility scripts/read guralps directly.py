@@ -133,7 +133,7 @@ def initfig1():
     siny, = ploty.plot([],[], 'gray', label='Sinus')
     sinz, = plotz.plot([],[], 'gray', label='Sinus')
 
-    ttopX,tnorthX,teastX,ttopY,tnorthY,teastY,ttopZ,tnorthZ,teastZ= plotxyz.plot([],[], '#ff0000', [],[], '#aa0000', [],[], '#550000', 
+    ttopX,ttopY,ttopZ,tnorthX,tnorthY,tnorthZ,teastX,teastY,teastZ= plotxyz.plot([],[], '#ff0000', [],[], '#aa0000', [],[], '#550000', 
                                                                                  [],[], '#00ff00', [],[], '#00aa00', [],[], '#005500',
                                                                                  [],[], '#0000ff', [],[], '#0000aa', [],[], '#000055', )
 
@@ -159,6 +159,11 @@ def initfig1():
 
     plotxyz.set_xlim(0, 10)
     plotxyz.set_ylim(-1.5, 1.5)
+
+    plotx.legend()
+    ploty.legend()
+    plotz.legend()
+    plotxyz.legend()
 
     fig1manager.window.showMaximized()
     plt.tight_layout()
@@ -274,8 +279,14 @@ def main():
         while True:
             try:
                 readData()
-                if time.time()-tstart >= 180:
-                    break
+
+                if time.time() - tstart >= 120:
+                    plotxyz.axvline(time.time()-tstart)
+                    ploty.axvline(time.time()-tstart)
+                    plotz.axvline(time.time()-tstart)
+                    plotx.axvline(time.time()-tstart)
+                    tstart = time.time()
+
             except KeyboardInterrupt:
                 break
 

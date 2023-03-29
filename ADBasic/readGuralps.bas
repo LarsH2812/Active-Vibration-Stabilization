@@ -14,7 +14,7 @@
 #DEFINE FREQ 40000000 '[Hz]
 #DEFINE MAXPOINTS 5000
 #DEFINE ADCMAX 2^16
-#DEFINE VMAX 10 '[V]
+#DEFINE VMAX 20 '[V]
 #DEFINE UNITS 1/1000 '[m/Vs]
 
 DIM tick, tick_old, delta as LONG
@@ -64,14 +64,11 @@ SUB initFIFO()
 ENDSUB
 
 FUNCTION CalcVoltage(ADCValue) as FLOAT
-  DIM ADCval as LONG
-  DIM Vval as FLOAT
-  ADCval = ADCValue - 0.5 * ADCMAX
-  Vval = ADCval * VMAX / ADCMAX
-  CalcVoltage = Vval
+  CalcVoltage = ADCValue*VMAX/ADCMAX - 0.5*VMAX
 ENDFUNCTION
-
-
+FUNCTION calcADC(Voltage) as LONG
+  CalcADC = Voltage*ADCMAX/VMAX + 0.5*ADCMAX
+ENDFUNCTION
 
 SUB readADC()
   PAR_1 = adc(1)
