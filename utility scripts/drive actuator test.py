@@ -191,10 +191,10 @@ def main():
                     if i == len(freqs):
                         break
 
-                    [Fe, Fs, Fw] = calculateZamps(1)
-                    adwinAmps['eastZ'](Fe)
-                    adwinAmps['southZ'](Fs)
-                    adwinAmps['westZ'](Fw)
+                    # [Fe, Fs, Fw] = calculateZamps(1)
+                    # adwinAmps['eastZ'](Fe)
+                    # adwinAmps['southZ'](Fs)
+                    # adwinAmps['westZ'](Fw)
 
                     
                     adwinFrequencies['eastZ'](freqs[i])
@@ -255,9 +255,8 @@ def readData():
         updatePlot()
 
 def calculate6DoF(t,ny,nz,ex,ez,tx,ty):
-    pass
         
-    meas = np.matrix([ny,nz,ex,ez,tx,ty])
+    meas = np.matrix([ny, nz, ex, ez, tx, ty])
     meas /= 1000
 
 
@@ -275,8 +274,8 @@ def saveFigures(prefix:str = ''):
 
         filename = time.strftime('Guralp Sensor Data - %Y%m%d%H%M%S')
         prefix = f'[{prefix}]' if prefix is not '' else ''
-        fig1.savefig(f'data/Guralp/svg/{prefix}{filename}.svg', format='svg')
-        fig1.savefig(f'data/Guralp/png/{prefix}{filename}.png', format='png')
+        fig1.savefig(f'data/xyz/svg/{prefix}{filename}.svg', format='svg')
+        fig1.savefig(f'data/xyz/png/{prefix}{filename}.png', format='png')
 
 
 def updatePlot(COMPLETETIME:bool = False):
@@ -348,11 +347,11 @@ if __name__ == '__main__':
         # updatePlot(True)
         fig1manager.set_window_title("6DoF-Data [DONE]")
         updatePlot(True)
-        saveFigures()
+        saveFigures(input(''))
         
         plt.ioff()
         plt.show()
-        saveFigures('specific view')
+        # saveFigures('specific view')
         plt.pause(0.001)
         # Close the figure
         plt.close()
