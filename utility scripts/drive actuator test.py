@@ -123,7 +123,7 @@ CREATE TABLE fourier(
 CREATE TABLE extras(t REAL PRIMARY KEY, stepper REAL, accoustic REAL);
 COMMIT;
 """)
-
+    
 def initfig1():
     global fig1, fig1manager
     global plotx, ploty, plotz, plotrx, plotry, plotrz
