@@ -123,7 +123,7 @@ CREATE TABLE fourier(
 CREATE TABLE extras(t REAL PRIMARY KEY, stepper REAL, accoustic REAL);
 COMMIT;
 """)
-
+    
 def initfig1():
     global fig1, fig1manager
     global plotx, ploty, plotz, plotrx, plotry, plotrz
@@ -254,9 +254,7 @@ def readData():
             
         updatePlot()
 
-def calculate6DoF(t,ny,nz,ex,ez,tx,ty):
-    pass
-        
+def calculate6DoF(t,ny,nz,ex,ez,tx,ty):        
     meas = np.matrix([ny,nz,ex,ez,tx,ty])
     meas /= 1000
 
@@ -275,8 +273,8 @@ def saveFigures(prefix:str = ''):
 
         filename = time.strftime('Guralp Sensor Data - %Y%m%d%H%M%S')
         prefix = f'[{prefix}]' if prefix is not '' else ''
-        fig1.savefig(f'data/Guralp/svg/{prefix}{filename}.svg', format='svg')
-        fig1.savefig(f'data/Guralp/png/{prefix}{filename}.png', format='png')
+        fig1.savefig(f'data/xyz/svg/{prefix}{filename}.svg', format='svg')
+        fig1.savefig(f'data/xyz/png/{prefix}{filename}.png', format='png')
 
 
 def updatePlot(COMPLETETIME:bool = False):
