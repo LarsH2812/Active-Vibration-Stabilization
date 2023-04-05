@@ -1,5 +1,5 @@
 import math
-import sqlite3
+import sqlite3 as sql
 import sys
 import time
 import traceback
@@ -27,43 +27,91 @@ print(MEASUREMENTTIME)
 adwin = ADwin(DeviceNo= 1,raiseExceptions= 1, useNumpyArrays= 1)
 
 BOOTFILE     = 'c:\ADwin\ADwin9.btl'
-PROCESS1FILE = 'ADBasic/readGuralps.T91'
-PROCESS2FILE = 'ADBasic/readExtras.T92'
-PROCESS3FILE = 'ADBasic/sendActuators.T93',
+PROCESS1FILE = 'ADBasic/readTime.T91'
+PROCESS2FILE = 'ADBasic/sendActuators.T92'
+PROCESS3FILE = 'ADBasic/readGuralps.T93'
+PROCESS4FILE = 'ADBasic/readExtras.T94'
 
-ZMAT = np.matrix([[-1.745,	0.727,	1.534],
-                  [-0.712,	1.02 , -0.724],
-                  [ 1.0  ,  1.0  ,  1.0  ]])
+DISTANCES = {
+'gnx':1.3750, 'gex':0.0000, 'gtx':0.0559,
+'gny':0.0000, 'gey':1.3750, 'gty':0.3449,
+'gnz':0.7528, 'gez':0.7528, 'gtz':3.2772,
+}
+
+AMAT = np.matrix([
+#    x | y | z |        rx         |        ry         |          rz
+    [0 , 1 , 0 , -DISTANCES['gnz'] ,                 0 , -DISTANCES['gnx']],    # northY
+    [0 , 0 , 1 , -DISTANCES['gny'] ,  DISTANCES['gnx'] ,                 0],    # northZ
+    [1 , 0 , 0 ,                 0 ,  DISTANCES['gez'] ,  DISTANCES['gey']],    # eastX
+    [0 , 0 , 1 , -DISTANCES['gey'] ,  DISTANCES['gex'] ,                 0],    # eastZ
+    [1 , 0 , 0 ,                 0 , -DISTANCES['gtz'] ,  DISTANCES['gty']],    # topX
+    [0 , 1 , 0 ,  DISTANCES['gtz'] ,                 0 , -DISTANCES['gtx']],    # topY
+])
+AMAT_INV = np.linalg.inv(AMAT)
+
+ZMAT = np.matrix([
+#     Fe    |  Fs    | Fw
+    [ 1     ,  1     , 1    ],  # sum(Fz)
+    [-1.745 ,  0.727 , 1.534],  # sum(Mx)
+    [ 0.712 , -1.02  , 0.724],  # sum(My)
+])
 ZMAT_INV = np.linalg.inv(ZMAT)
 M = 24000 #[kg]
 
-adwinPhases = {
-    'eastX' : (lambda x: adwin.Set_FPar(62, x)),
-    'westX' : (lambda x: adwin.Set_FPar(65, x)),
-    'southY': (lambda x: adwin.Set_FPar(68, x)),
-    'westY' : (lambda x: adwin.Set_FPar(71, x)),
-    'southZ': (lambda x: adwin.Set_FPar(74, x)),
-    'eastZ' : (lambda x: adwin.Set_FPar(77, x)),
-    'westZ' : (lambda x: adwin.Set_FPar(80, x)),
-}
-adwinAmps = {
-    'eastX' : (lambda x: adwin.Set_FPar(60, x)),
-    'westX' : (lambda x: adwin.Set_FPar(63, x)),
-    'southY': (lambda x: adwin.Set_FPar(66, x)),
-    'westY' : (lambda x: adwin.Set_FPar(69, x)),
-    'southZ': (lambda x: adwin.Set_FPar(72, x)),
-    'eastZ' : (lambda x: adwin.Set_FPar(75, x)),
-    'westZ' : (lambda x: adwin.Set_FPar(78, x)),
-}
-adwinFrequencies = {
-    'eastX' : (lambda x: adwin.Set_FPar(61, x)),
-    'westX' : (lambda x: adwin.Set_FPar(64, x)),
-    'southY': (lambda x: adwin.Set_FPar(67, x)),
-    'westY' : (lambda x: adwin.Set_FPar(70, x)),
-    'southZ': (lambda x: adwin.Set_FPar(73, x)),
-    'eastZ' : (lambda x: adwin.Set_FPar(76, x)),
-    'westZ' : (lambda x: adwin.Set_FPar(79, x)),
-}
+def set_fase(actuator:str = None, fase:float = 0):
+    if actuator.lower() not in ['eastx','westx','southy','westy','southz','eastz','westz']:
+        raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {['eastx','westx','southy','westy','southz','eastz','westz']}")
+    if actuator.lower() == 'eastx':
+        adwin.Set_FPar(62, fase)
+    elif actuator.lower() == 'westx':
+        adwin.Set_FPar(65, fase)
+    elif actuator.lower() == 'southy':
+        adwin.Set_FPar(68, fase)
+    elif actuator.lower() == 'westy':
+        adwin.Set_FPar(71, fase)
+    elif actuator.lower() == 'southz':
+        adwin.Set_FPar(74, fase)
+    elif actuator.lower() == 'eastz':
+        adwin.Set_FPar(77, fase)
+    elif actuator.lower() == 'westz':
+        adwin.Set_FPar(80, fase)
+    return True
+def set_amplitude(actuator:str = None, amplitude:float = 0):
+    if actuator.lower() not in ['eastx','westx','southy','westy','southz','eastz','westz']:
+        raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {['eastx','westx','southy','westy','southz','eastz','westz']}")
+    if actuator.lower() == 'eastx':
+        adwin.Set_FPar(60, amplitude)
+    elif actuator.lower() == 'westx':
+        adwin.Set_FPar(63, amplitude)
+    elif actuator.lower() == 'southy':
+        adwin.Set_FPar(66, amplitude)
+    elif actuator.lower() == 'westy':
+        adwin.Set_FPar(69, amplitude)
+    elif actuator.lower() == 'southz':
+        adwin.Set_FPar(72, amplitude)
+    elif actuator.lower() == 'eastz':
+        adwin.Set_FPar(75, amplitude)
+    elif actuator.lower() == 'westz':
+        adwin.Set_FPar(78, amplitude)
+    return True      
+def set_frequentie(actuator:str = None, frequentie:float = 0):
+    if actuator.lower() not in ['eastx','westx','southy','westy','southz','eastz','westz']:
+        raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {['eastx','westx','southy','westy','southz','eastz','westz']}")
+    if actuator.lower() == 'eastx':
+        adwin.Set_FPar(60, frequentie)
+    elif actuator.lower() == 'westx':
+        adwin.Set_FPar(63, frequentie)
+    elif actuator.lower() == 'southy':
+        adwin.Set_FPar(66, frequentie)
+    elif actuator.lower() == 'westy':
+        adwin.Set_FPar(69, frequentie)
+    elif actuator.lower() == 'southz':
+        adwin.Set_FPar(72, frequentie)
+    elif actuator.lower() == 'eastz':
+        adwin.Set_FPar(75, frequentie)
+    elif actuator.lower() == 'westz':
+        adwin.Set_FPar(78, frequentie)
+    return True
 
 error = None
 
@@ -72,182 +120,164 @@ freq = 0
 
 # Create the data arrays
 def initDatabase():
-    global date , meastime, cur, db
-    meastime = time.localtime()
-    date = time.strftime("%Y-%m-%d", meastime)
-    meastime = time.strftime("%H%M%S", meastime)
-    db = sqlite3.connect(f'data\{date} - {meastime}.db')
-    cur = db.cursor()
-    cur.execute("CREATE TABLE guralp(t REAL PRIMARY KEY, topX REAL, topY REAL, topZ REAL, northX REAL, northY REAL, northZ REAL, eastX REAL, eastY REAL, eastZ REAL)")
-    cur.execute("CREATE TABLE fourier(f REAL PRIMARY KEY, txamp REAL, txphase REAL, tyamp REAL, typhase REAL, tzamp REAL, tzphase REAL, nxamp REAL, nxphase REAL, nyamp REAL, nyphase REAL, nzamp REAL, nzphase REAL, examp REAL, exphase REAL, eyamp REAL, eyphase REAL, ezamp REAL, ezphase REAL)")
-    cur.execute("CREATE TABLE extras(t REAL PRIMARY KEY, stepper REAL, accoustic REAL)")
-    db.commit()
+    global db, cur
+    try:
+        current_time = time.localtime()
+        current_date = time.strftime("%Y-%m-%d", current_time)
+        current_time = time.strftime("%H%M%S", current_time)
+        
+        db = sql.connect(f'data\{current_date} - {current_time}.db')
+        cur = db.cursor()
+        
+        cur.executescript("""
+                        BEGIN;
+                        CREATE TABLE guralp(
+                            t REAL PRIMARY KEY, 
+                            topX REAL, topY REAL,topZ REAL, 
+                            northX REAL, northY REAL, northZ REAL, 
+                            eastX REAL, eastY REAL, eastZ REAL
+                        );
+                        CREATE TABLE DoF(
+                            t REAL PRIMARY KEY,
+                            x REAL,
+                            y REAL,
+                            z REAL,
+                            rx REAL,
+                            ry REAL,
+                            rz REAL,
+                            FOREIGN KEY(t) REFERENCES guralp(t)
+                        );
+                        CREATE TABLE fourier(
+                            f REAL PRIMARY KEY,
+                            txamp REAL, txphase REAL, tyamp REAL, typhase REAL, tzamp REAL, tzphase REAL, 
+                            nxamp REAL, nxphase REAL, nyamp REAL, nyphase REAL, nzamp REAL, nzphase REAL, 
+                            examp REAL, exphase REAL, eyamp REAL, eyphase REAL, ezamp REAL, ezphase REAL
+                        );
+                        CREATE TABLE extras(t REAL PRIMARY KEY, stepper REAL, accoustic REAL);
+                        COMMIT;
+                        """)
+        return True, db, cur
+    except Exception as e:
+        print(f'type: {type(e)}\nerror: {traceback.format_exc()}')
+        return False, None, None
 
 def initfig1():
-    global fig1, fig1manager, plotxyz, plotx, ploty, plotz, topX, northX, eastX, ax, topY, northY, eastY, ay, topZ, northZ, eastZ, az, sinx, siny, sinz, ttopX, tnorthX, teastX, ttopY, tnorthY, teastY, ttopZ, tnorthZ, teastZ
-    fig1 = plt.figure('XYZ-Data [INITIALIZING]', figsize=(15, 10))
+    global fig1, fig1manager
+    global plotx, ploty, plotz, plotrx, plotry, plotrz
+    global linex, liney, linez, linerx, linery, linerz
+
+    fig1, (plotx, ploty,plotz, plotrx,plotry,plotrz) = plt.subplots(6,1, sharex=True, sharey=True)
+    plt.tight_layout()
+    fig1.subplots_adjust(hspace=0)
     fig1manager = plt.get_current_fig_manager()
-    SAFEFIGURE[1] = True
 
-    #Create a Figure
-    plotxyz = plt.subplot2grid((2,3), (1,0), colspan=3, )
-    plotx   = plt.subplot2grid((2,3), (0,0), sharex=plotxyz, sharey=plotxyz, )
-    ploty   = plt.subplot2grid((2,3), (0,1), sharex=plotxyz, sharey=plotxyz, )
-    plotz   = plt.subplot2grid((2,3), (0,2), sharex=plotxyz, sharey=plotxyz, )
-
-    topX, = plotx.plot([],[], '#ff0000', label= 'Top X')
-    northX, = plotx.plot([],[], '#aa0000', label= 'North X')
-    eastX, = plotx.plot([],[], '#550000', label= 'East X')
-    ax, = plotx.plot([],[], 'k--', label= 'Average X')
-
-    plotx.set_title('X')
-    plotx.set_xlabel('Time (s)')
-    plotx.set_ylabel('A (V)')
-    plotx.set_xlim(0, 10)
-    plotx.set_ylim(-1.5, 1.5)
-
-    topY, = ploty.plot([],[], '#00ff00', label= 'Top Y')
-    northY, = ploty.plot([],[], '#00aa00', label= 'North Y')
-    eastY, = ploty.plot([],[], '#005500', label= 'East Y')
-    ay, = ploty.plot([],[], 'k--', label= 'Average Y')
-
-    ploty.set_title('Y')
-    ploty.set_xlabel('Time (s)')
-    ploty.set_ylabel('A (V)')
-    ploty.set_xlim(0, 10)
-    ploty.set_ylim(-1.5, 1.5)
-
-    topZ, = plotz.plot([],[], '#0000ff', label= 'Top Z')
-    northZ, = plotz.plot([],[], '#0000aa', label= 'North Z')
-    eastZ, = plotz.plot([],[], '#000055', label= 'East Z')
-    az, = plotz.plot([],[], 'k--', label= 'Average Z')
-
-    plotz.set_title('Z')
-    plotz.set_xlabel('Time (s)')
-    plotz.set_ylabel('A (V)')
-    plotz.set_xlim(0, 10)
-    plotz.set_ylim(-1.5, 1.5)
-
-    sinx, = plotx.plot([],[], 'gray', label='Sinus')
-    siny, = ploty.plot([],[], 'gray', label='Sinus')
-    sinz, = plotz.plot([],[], 'gray', label='Sinus')
-
-    ttopX,tnorthX,teastX,ttopY,tnorthY,teastY,ttopZ,tnorthZ,teastZ= plotxyz.plot([],[], '#ff0000', [],[], '#aa0000', [],[], '#550000', 
-                                                                                 [],[], '#00ff00', [],[], '#00aa00', [],[], '#005500',
-                                                                                 [],[], '#0000ff', [],[], '#0000aa', [],[], '#000055', )
-
-    if COMPLETEPLOT:
-        plotxyz.set_title('X, Y, Z')
-        ttopX.set_label('Top X')
-        tnorthX.set_label('North X')
-        teastX.set_label('East X')
-        ttopY.set_label('Top Y')
-        tnorthY.set_label('North Y')
-        teastY.set_label('East Y')
-        ttopZ.set_label('Top Z')
-        tnorthZ.set_label('North Z')
-        teastZ.set_label('East Z')
-    else:
-        plotxyz.set_title('X, Y, Z')
-        ttopX.set_label('Average X')
-        ttopY.set_label('Average Y')
-        ttopZ.set_label('Average Z')
-
-    plotxyz.set_xlabel('Time (s)')
-    plotxyz.set_ylabel('A (V)')
-
-    plotxyz.set_xlim(0, 10)
-    plotxyz.set_ylim(-1.5, 1.5)
+    linex, = plotx.plot([],[], 'k')
+    liney, = ploty.plot([],[], 'k')
+    linez, = plotz.plot([],[], 'k')
+    linerx, = plotrx.plot([],[], 'k')
+    linery, = plotry.plot([],[], 'k')
+    linerz, = plotrz.plot([],[], 'k')
 
     fig1manager.window.showMaximized()
-    plt.tight_layout()
 
 def initfig2():
-    global fig2, fig2manager, annlist, plotftx, plotfty, plotftz, plotfnx, plotfny, plotfnz, plotfex, plotfey, plotfez, lineftx, linefty, lineftz, linefnx, linefny, linefnz, linefex, linefey, linefez, plotVect, sVect, r1Vect, r2Vect, r3Vect
-    SAFEFIGURE[2] = True
-
-    fig2 = plt.figure('Fourier-Data [INITIALIZING]')
+    global fig2, fig2manager
+    global plotfx, plotfy, plotfz, plotfrx, plotfry, plotfrz
+    global linefx, linefy, linefz, linefrx, linefry, linefrz
+    
+    fig2, (plotfx, plotfy, plotfz, plotfrx, plotfry, plotfrz) = plt.subplots(6,1, sharex= True, sharey= True)
+    plt.tight_layout()
+    fig2.subplots_adjust(hspace=0)
     fig2manager = plt.get_current_fig_manager()
-    fig2.set_size_inches(12, 6)
-    fig2.set_label('Fourier Analyses')
-    annlist = np.array([])
-    plotftx = fig2.add_subplot(3, 6, 1, )
-    plotfty = fig2.add_subplot(3, 6, 7, sharex=plotftx, sharey=plotftx, )
-    plotftz = fig2.add_subplot(3, 6, 13, sharex=plotftx, sharey=plotftx, )
-    plotfnx = fig2.add_subplot(3, 6, 2, sharex=plotftx, sharey=plotftx, )
-    plotfny = fig2.add_subplot(3, 6, 8, sharex=plotftx, sharey=plotftx, )
-    plotfnz = fig2.add_subplot(3, 6, 14, sharex=plotftx, sharey=plotftx, )
-    plotfex = fig2.add_subplot(3, 6, 3, sharex=plotftx, sharey=plotftx, )
-    plotfey = fig2.add_subplot(3, 6, 9, sharex=plotftx, sharey=plotftx, )
-    plotfez = fig2.add_subplot(3, 6, 15, sharex=plotftx, sharey=plotftx, )
-    lineftx, = plotftx.plot([], [], 'k')
-    linefty, = plotfty.plot([], [], 'k')
-    lineftz, = plotftz.plot([], [], 'k')
-    linefnx, = plotfnx.plot([], [], 'k')
-    linefny, = plotfny.plot([], [], 'k')
-    linefnz, = plotfnz.plot([], [], 'k')
-    linefex, = plotfex.plot([], [], 'k')
-    linefey, = plotfey.plot([], [], 'k')
-    linefez, = plotfez.plot([], [], 'k')
 
-    plotftx.set_title('Top x')
-    plotfty.set_title('Top y')
-    plotftz.set_title('Top z')
-    plotfnx.set_title('North x')
-    plotfny.set_title('North y')
-    plotfnz.set_title('North z')
-    plotfex.set_title('East x')
-    plotfey.set_title('East y')
-    plotfez.set_title('East z')
-
-    plotftx.set_xlim(0, 50)
-    plotftx.set_ylim(0, 0.25)
-
-    plotVect = fig2.add_subplot(3, 6,(4,18))
-    sVect = plotVect.quiver(0,0,0,0, angles='xy', scale_units='xy', scale=1, color='r')
-    r1Vect = plotVect.quiver(0,0,0,0, angles='xy', scale_units='xy', scale=1, color='b')
-    r2Vect = plotVect.quiver(0,0,0,0, angles='xy', scale_units='xy', scale=1, color='b')
-    r3Vect = plotVect.quiver(0,0,0,0, angles='xy', scale_units='xy', scale=1, color='b')
-
-    fig2.tight_layout()
+    linefx, = plotfx.plot([],[],'k')
+    linefy, = plotfy.plot([],[],'k')
+    linefz, = plotfz.plot([],[],'k')
+    linefrx, = plotfrx.plot([],[],'k')
+    linefry, = plotfry.plot([],[],'k')
+    linefrz, = plotfrz.plot([],[],'k')
+    
+    fig2manager.window.showMaximized()
 
 def initfig3():
-    global fig3, fig3manager, plotStepper, plotAccoustic, lineStepper, lineAccoustic, plotVect, sVect, r1Vect, r2Vect, r3Vect, stepperSignal, PTaccousticSignal
-    fig3 = plt.figure("Extra Data [INITIALIZING]", figsize=(10,5))
+    global fig3, fig3manager
+    global plotbax, plotbpx, plotbay, plotbpy, plotbaz, plotbpz
+    global plotbarx,plotbprx,plotbary,plotbpry,plotbarz,plotbprz
+    global linebax,  linebpx,  linebay,  linebpy,  linebaz,  linebpy
+    global linebarx, linebprx, linebary, linebpry, linebarz, linebprz
+    
+    fig3, ((plotbax,plotbarx),
+            (plotbpx,plotbprx),
+            (plotbay,plotbary),
+            (plotbpy,plotbpry),
+            (plotbaz,plotbarz),
+            (plotbpz,plotbprz)) = plt.subplots(6,2)
+
     fig3manager = plt.get_current_fig_manager()
-    SAFEFIGURE[3] = True
 
-    plotStepper  = fig3.add_subplot(2,1,(1))
-    plotAccoustic  = fig3.add_subplot(2,1,(2), sharex=plotStepper)
+    plotbpx. sharex(plotbax)
+    plotbpy. sharex(plotbay)
+    plotbpz. sharex(plotbaz)
+    plotbprx.sharex(plotbarx)
+    plotbpry.sharex(plotbary)
+    plotbprz.sharex(plotbarz)
 
-    lineStepper,  = plotStepper.plot([],[])
-    lineAccoustic,  = plotAccoustic.plot([],[])
+    plotbax. set_xscale('log');plotbax. set_yscale('log')
+    plotbay. set_xscale('log');plotbay. set_yscale('log')
+    plotbaz. set_xscale('log');plotbaz. set_yscale('log')
+    plotbarx.set_xscale('log');plotbarx.set_yscale('log')
+    plotbary.set_xscale('log');plotbary.set_yscale('log')
+    plotbarz.set_xscale('log');plotbarz.set_yscale('log')
 
+    plotbax. grid(True, which= 'both', axis= 'both');plotbpx. grid(True, which= 'both', axis= 'both')
+    plotbay. grid(True, which= 'both', axis= 'both');plotbpy. grid(True, which= 'both', axis= 'both')
+    plotbaz. grid(True, which= 'both', axis= 'both');plotbpz. grid(True, which= 'both', axis= 'both')
+    plotbarx.grid(True, which= 'both', axis= 'both');plotbprx.grid(True, which= 'both', axis= 'both')
+    plotbary.grid(True, which= 'both', axis= 'both');plotbpry.grid(True, which= 'both', axis= 'both')
+    plotbarz.grid(True, which= 'both', axis= 'both');plotbprz.grid(True, which= 'both', axis= 'both')
 
-
+    linebax,  = plotbax. plot([],[],'k');linebpx,  = plotbpx. plot([],[],'k')
+    linebay,  = plotbay. plot([],[],'k');linebpy,  = plotbpy. plot([],[],'k')
+    linebaz,  = plotbaz. plot([],[],'k');linebpy,  = plotbpz. plot([],[],'k')
+    linebarx, = plotbarx.plot([],[],'k');linebprx, = plotbprx.plot([],[],'k')
+    linebary, = plotbary.plot([],[],'k');linebpry, = plotbpry.plot([],[],'k')
+    linebarz, = plotbarz.plot([],[],'k');linebprz, = plotbprz.plot([],[],'k')
+    fig3manager.window.showMaximized()
+    plt.pause((0.001))
+    plt.tight_layout()
     plt.pause(0.001)
 
 def initAdwin():
-    # Load the program
-    adwin.Boot(Filename=BOOTFILE)               # Load the boot file and boot the ADwin
-    adwin.Load_Process(Filename=PROCESS1FILE)   # Load process 1
-    adwin.Load_Process(Filename=PROCESS2FILE)   # Load process 2
-    adwin.Load_Process(Filename=PROCESS3FILE)   # Load process 3
-    adwin.Set_Par(80, 1)
-    # Start the program
-    adwin.Start_Process(ProcessNo= 1)           # Start process 1
-    adwin.Start_Process(ProcessNo= 2)           # Start process 2
-    adwin.Start_Process(ProcessNo= 3)           # Start process 3
+    """
+    This function initializes the ADwin system by booting up the system, loading the 4 process files, starting the process files
+    """    
+    try:
+        adwin.Boot(Filename=BOOTFILE)               # Boot the ADwin
+    
+        adwin.Load_Process(Filename=PROCESS1FILE)   # Load the time keeping process
+        adwin.Load_Process(Filename=PROCESS2FILE)   # Load the actuator driving process
+        adwin.Load_Process(Filename=PROCESS3FILE)   # Load the guralp data gathering process
+        adwin.Load_Process(Filename=PROCESS4FILE)   # Load the extra data gathering process
+        
+        adwin.Start_Process(ProcessNo=1)            # Load the time keeping process
+        adwin.Start_Process(ProcessNo=2)            # Load the actuator driving process
+        adwin.Start_Process(ProcessNo=3)            # Load the guralp data gathering process
+        adwin.Start_Process(ProcessNo=4)            # Load the extra data gathering process
+        
+        return True
+    except Exception as e:
+        print(f'type: {type(e)}\nerror: {traceback.format_exc()}')
+        return False
 
 def init():
     '''Initialize '''
     global t0
-    in1 = input('show XYZ-data: Y/[N]\n')
-    in2 = input('show Fourier data: Y/[N]\n')
-    in3 = input('show Extra\'s data: Y/[N]\n')
-    SHOWGRAPH[1] = True if in1.lower() in ["yes", "y"] else False
-    SHOWGRAPH[2] = True if in2.lower() in ["yes", "y"] else False
-    SHOWGRAPH[3] = True if in3.lower() in ["yes", "y"] else False
+    in1 = input('show XYZ-data: Y/n\n')
+    in2 = input('show Fourier data: Y/n\n')
+    in3 = input('show Extra\'s data: Y/n\n')
+    SHOWGRAPH[1] = False if in1.lower() in ["no","nee", "n"] else True
+    SHOWGRAPH[2] = False if in2.lower() in ["no","nee", "n"] else True
+    SHOWGRAPH[3] = False if in3.lower() in ["no","nee", "n"] else True
     
     initDatabase()
     for i in SHOWGRAPH:
@@ -267,77 +297,7 @@ def main():
 
     try:
         # Read the data
-        while gettime() <= FOURCALCTIME:
-            readData()
-                        
-        topamp, topfreq, topphase = calculateFourier()
-
-        vector = ['nz']
-
-        avgamp = 0
-        avgphase = 0
-        for n in vector:
-            avgamp += topamp[n]
-            avgphase += topamp[n] * topphase[n]
-        coramp = 0.25 *(avgamp / len(vector))
-        corphase = avgphase / len(vector)
-        u = 4*coramp * math.cos(avgphase)  
-        v = 4*coramp * math.sin(avgphase)
-
-        plotVect.cla()
-        sVect = plotVect.quiver(0,0,u,v, angles='xy', scale_units='xy', scale=1, color='r')
-        rx, ry = coramp * np.cos(corphase),  coramp * np.sin(corphase)
-        r1u, r1v = coramp * math.cos(corphase), coramp * math.sin(corphase)
-        r2u, r2v = coramp * math.cos(corphase + math.radians(120)), coramp * math.sin(corphase + math.radians(120))
-        r3u, r3v = coramp * math.cos(corphase - math.radians(120)), coramp * math.sin(corphase - math.radians(120))
-        r1Vect  = plotVect.quiver(u, v, r1u, r1v, angles='xy', scale_units='xy', scale=1, color='k')
-        r2Vect  = plotVect.quiver(u, v, r2u, r2v, angles='xy', scale_units='xy', scale=1, color='k')
-        r3Vect  = plotVect.quiver(u, v, r3u, r3v, angles='xy', scale_units='xy', scale=1, color='k')
-        plt.pause(0.001)
-
-        outamp = 0.008 * calculateZamps(coramp)
-        print(outamp)
-
-        dt = 0.1
-        tstep = np.arange(0,3,dt)
-        ostep = np.linspace(0,1,len(tstep))
-        for s in ostep:
-            setZs(s * outamp, corphase, topfreq['nz'])
-            FOURCALCTIME += dt
-            time.sleep(dt)
-
-
-        while gettime() <= FOURCALCTIME:
-            readData()
-
-        topampr1, topfreqr1, topphaser1 = calculateFourier()
-        s1u, s1v = topampr1['nz'] * np.cos(topphaser1['nz']),topampr1['nz'] * np.sin(topphaser1['nz'])
-        s1Vect   = plotVect.quiver(0, 0, s1u, s1v, angles='xy', scale_units='xy', scale=1, color='b')
-        plotVect.annotate(f's1: {topampr1["nz"]}\n{topphaser1["nz"]}', xy=(s1u, s1v), xytext=(s1u, s1v), color='b')
-        plt.pause(0.001)
-
-        setZs(outamp, (corphase + np.deg2rad(120)), topfreq['nz'])
-
-        while gettime() <= FOURCALCTIME:
-            readData()
-
-        topampr2, topfreqr2, topphaser2 = calculateFourier()
-        s2u, s2v = topampr2['nz'] * np.cos(topphaser2['nz']),topampr2['nz'] * np.sin(topphaser2['nz'])
-        s2Vect   = plotVect.quiver(0, 0, s2u, s2v, angles='xy', scale_units='xy', scale=1, color='b')
-        plotVect.annotate(f's2: {topampr2["nz"]}\n{topphaser2["nz"]}', xy=(s2u, s2v), xytext=(s2u, s2v), color='b')
-        plt.pause(0.001)
-
-        setZs(outamp, (corphase - np.deg2rad(120)), topfreq['nz'])
-
-        while gettime() <= FOURCALCTIME:
-            readData()
-
-        topampr3, topfreqr3, topphaser3 = calculateFourier()
-        s3u, s3v = topampr3['nz'] * np.cos(topphaser3['nz']),topampr3['nz'] * np.sin(topphaser3['nz'])
-        s3Vect   = plotVect.quiver(0, 0, s3u, s3v, angles='xy', scale_units='xy', scale=1, color='b')
-        plotVect.annotate(f's3: {topampr3["nz"]}\n{topphaser3["nz"]}', xy=(s3u, s3v), xytext=(s3u, s3v), color='b')
-        plt.pause(0.001)
-
+        pass
 
     except KeyboardInterrupt as ke:
         error = {'type': type(ke), 'str' :traceback.format_exc()}
@@ -345,12 +305,44 @@ def main():
     except Exception as e:
         error = {'type': type(e), 'str' :traceback.format_exc()}
         print(f'type: {error["type"]} \n{error["str"]}')
+
 def gettime():
-    adwintime = cur.execute('SELECT MAX(t) FROM guralp').fetchone()[0]
-    adwintime = adwintime if adwintime is not None else 0
+    adwintime = adwin.get_Fpar(10)
     return adwintime
 
-def readData():
+def get_data_time():
+    datatime = cur.execute('SELECT MAX(t) FROM guralp').fetchone()[0]
+    return datatime if datatime is not None else 0
+
+def readData(dataTX = 0):
+    """Read out 2500 points of data from the FIFO data registers.
+
+    `dataT`
+        Time data
+    `dataTX`
+        data read out from the topX direction
+    `dataTY`
+        data read out from the topY direction
+    `dataTZ`
+        data read out from the topZ direction
+    `dataNX`
+        data read out from the northX direction
+    `dataNY`
+        data read out from the northY direction
+    `dataNZ`
+        data read out from the northZ direction
+    `dataEX`
+        data read out from the eastX direction
+    `dataEY`
+        data read out from the eastY direction
+    `dataEZ`
+        data read out from the eastZ direction
+    `dataStepper`
+        data read out from the stepper signal
+    `dataAccoustic`
+        data read out from the accoustic signal
+    
+    """
     if adwin.Fifo_Full(10) >= SAMPLEPOINTS:
         dataTX = adwin.GetFifo_Float(1, SAMPLEPOINTS)
         dataTY = adwin.GetFifo_Float(2, SAMPLEPOINTS)
@@ -424,18 +416,6 @@ def calculateZamps(amplitude):
                     [0],
                     [M * amplitude]])
     return (ZMAT_INV * Fz)
-def setZs(amplitude, phase, frequency):
-    adwinAmps['eastZ'](amplitude[0,0])
-    adwinAmps['southZ'](amplitude[1,0])
-    adwinAmps['westZ'](amplitude[2,0])
-    adwinPhases['eastZ'](phase)
-    adwinPhases['southZ'](phase)
-    adwinPhases['westZ'](phase)
-    adwinFrequencies['eastZ'](frequency)
-    adwinFrequencies['southZ'](frequency)
-    adwinFrequencies['westZ'](frequency)
-
-
 
 def calculateFourier():
     global FOURIERCALCULATED, FOURCALCTIME, plotVect, sVect, r1Vect, r2Vect, r3Vect, annlist

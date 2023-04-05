@@ -132,6 +132,7 @@ def init_database():
         
         db = sql.connect(f'Meetfiles\data\{current_date} - {current_time}.db')
         cur = db.cursor()
+        
         cur.executescript("""
                         BEGIN;
                         CREATE TABLE guralp(
