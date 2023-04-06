@@ -20,6 +20,9 @@ from adcdac_device import ADCDACDevice
 from adcdac_threading import ADCDACThreading
 from eldutils import bytes_to_hex
 
+# TODO Plaats hier de imports voor de 
+
+# NOTE CHECK COM PORT
 COM_PORT = 'COM8'
 #COM_PORT = 'COM5'
 #COM_PORT = 'DUMMY'
@@ -49,7 +52,15 @@ class MainApp(object):
 
 
   def init(self):
-    """ Init device etc."""
+    """ Init device etc.
+
+    DAC/ADC at COM port: `COM8`
+    No. ADC inputs: `16`
+    No. DAC outputs: `8`
+    Bytesize ADC: `4`
+    Bytesize DAC: `4`
+    """
+    
     self._adcdac_device = ADCDACDevice(port_name=COM_PORT,
                                        adc_count=16,
                                        dac_count=8,
@@ -59,6 +70,8 @@ class MainApp(object):
     self._adcdac_device.init()
 
     self._adcdac_thread = ADCDACThreading(adcdac_device=self._adcdac_device)
+    # TODO: Hier initializatie code plaatsen.
+    # BUG: 
 
     return True
 
@@ -85,11 +98,12 @@ class MainApp(object):
         self._adcdac_thread.check_status()
 
         adc_int_data = self._adcdac_device.unpack_adc_data(adc_byte_data)
-
-        # TODO: Process data here, for now just invert data
-        #print(f"before int={adc_int_data[0]}")
+        
+        # TODO: Hier moet het main code komen!
+        # print(f"before int={adc_int_data[0]}")
         # NOTE: adc_int_data[0] contains sample #, adc_int_data[1][..] contains all int-samples
-        dac_int_data = [adc_int_data[0], [int_val * -1 for int_val in adc_int_data[1]]]
+        # dac_int_data = [adc_int_data[0], [int_val * -1 for int_val in adc_int_data[1]]]
+        
         #print(f"after int={dac_int_data[0]}")
 
         # Pack int data as bytes
