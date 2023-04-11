@@ -234,7 +234,7 @@ if __name__ == "__main__":
     
     t0 = get_time()
 
-    times = {'frequency' : 0.0}
+    MEASUREMENTTMES = np.append(MEASUREMENTTMES, 0.0)
 
     frequenties = np.arange(0.5,3.1,0.1,)
     set_amplitude('eastz', 0)
@@ -243,31 +243,26 @@ if __name__ == "__main__":
         print(f'(f = {0}) 0-measuring 1: {t0 + 20 - get_time() }')
         read_data()
     t1 = get_time()
-    times['measure time 1'] = t1
+    MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
     while get_time() <= (t1+20):
         print(f'(f = {0}) 0-measuring 2: {t1 + 20 - get_time() }')
         read_data()
     t1 = get_time()
-    times['measure time 2'] = t1
+    MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
     while get_time() <= (t1+20):
         print(f'(f = {0}) 0-measuring 3: {t1 + 20 - get_time() }')
         read_data()
     t1 = get_time()
-    times['measure time 3'] = t1
+    MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
     while get_time() <= (t1+20):
         print(f'(f = {0}) 0-measuring 4: {t1 + 20 - get_time() }')
         read_data()
     t1 = get_time()
-    times['measure time 4'] = t1
-
-    print(times)
-    MEASUREMENTTMES = np.append(MEASUREMENTTMES, times)
-
-
+    MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
     
     for f in frequenties:
         try:
-            times = {'frequency' : f}
+            MEASUREMENTTMES = np.append(MEASUREMENTTMES,f)
             periode = 1 / f
             print(f)
             
@@ -279,30 +274,27 @@ if __name__ == "__main__":
                 print(f'(f = {f:.2f}) Setting: {t1 + 20 - get_time() }')
                 read_data()
             t1 = get_time()
-            times['settingtime'] = t1
+            MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
             while get_time() <= (t1 + 5*periode):
                 print(f'(f = {f:.2f}) Measuring 1: {t1 + 5*periode - get_time()}')
                 read_data()
             t1 = get_time()
-            times['measure time 1'] = t1
+            MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
             while get_time() <= (t1 + 5*periode):
                 print(f'(f = {f:2f}) Measuring 2: {t1 + 5*periode - get_time()}')
                 read_data()
             t1 = get_time()
-            times['measure time 2'] = t1
+            MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
             while get_time() <= (t1 + 5*periode):
                 print(f'(f = {f:.2f}) Measuring 3: {t1 + 5*periode - get_time()}')
                 read_data()
             t1 = get_time()
-            times['measure time 3'] = t1
+            MEASUREMENTTMES = np.append(MEASUREMENTTMES, t1)
             while get_time() <= (t1 + 5*periode):
                 print(f'(f = {f:.2f}) Measuring 4: {t1 + 5*periode - get_time()}')
                 read_data()
             t1 = get_time()
-            times['measure time 4'] = t1
-
-            print(times)
-            MEASUREMENTTMES = np.append(MEASUREMENTTMES, times)
+            MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
             
         
         except ADwinError as ADE:
