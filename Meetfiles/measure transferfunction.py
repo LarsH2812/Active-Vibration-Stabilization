@@ -198,24 +198,24 @@ def get_data_time():
     datatime = cur_meet_resultaten.execute('SELECT MAX(t) FROM guralp').fetchone()[0]
     return datatime if datatime is not None else 0
 
-def read_data():
-    if adwin.Fifo_Full(10) >= SAMPLEPOINTS:
-        dataTX = adwin.GetFifo_Float(1, SAMPLEPOINTS)
-        dataTY = adwin.GetFifo_Float(2, SAMPLEPOINTS)
-        dataTZ = adwin.GetFifo_Float(3, SAMPLEPOINTS)
-        dataNX = adwin.GetFifo_Float(4, SAMPLEPOINTS)
-        dataNY = adwin.GetFifo_Float(5, SAMPLEPOINTS)
-        dataNZ = adwin.GetFifo_Float(6, SAMPLEPOINTS)
-        dataEX = adwin.GetFifo_Float(7, SAMPLEPOINTS)
-        dataEY = adwin.GetFifo_Float(8, SAMPLEPOINTS)
-        dataEZ = adwin.GetFifo_Float(9, SAMPLEPOINTS)
-        dataT = adwin.GetFifo_Float(10, SAMPLEPOINTS)
+def read_data(dataPoints: int = SAMPLEPOINTS):
+    if adwin.Fifo_Full(10) >= dataPoints:
+        dataTX = adwin.GetFifo_Float(1, dataPoints)
+        dataTY = adwin.GetFifo_Float(2, dataPoints)
+        dataTZ = adwin.GetFifo_Float(3, dataPoints)
+        dataNX = adwin.GetFifo_Float(4, dataPoints)
+        dataNY = adwin.GetFifo_Float(5, dataPoints)
+        dataNZ = adwin.GetFifo_Float(6, dataPoints)
+        dataEX = adwin.GetFifo_Float(7, dataPoints)
+        dataEY = adwin.GetFifo_Float(8, dataPoints)
+        dataEZ = adwin.GetFifo_Float(9, dataPoints)
+        dataT = adwin.GetFifo_Float(10, dataPoints)
 
         data = np.array([dataT, dataTX, dataTY, dataTZ, dataNX, dataNY, dataNZ, dataEX, dataEY, dataEZ])
         cur_meet_resultaten.executemany('INSERT INTO guralp VALUES (?,?,?,?,?,?,?,?,?,?)', np.transpose(data).tolist())
         
-        dataStepper = adwin.GetFifo_Float(20, SAMPLEPOINTS)
-        dataAccoustic = adwin.GetFifo_Float(21, SAMPLEPOINTS)
+        dataStepper = adwin.GetFifo_Float(20, dataPoints)
+        dataAccoustic = adwin.GetFifo_Float(21, dataPoints)
         data = np.array([dataT, dataStepper, dataAccoustic])
         cur_meet_resultaten.executemany('INSERT INTO extras VALUES (?,?,?)', np.transpose(data).tolist())
         db_meet_resultaten.commit()
@@ -234,15 +234,36 @@ if __name__ == "__main__":
     
     t0 = get_time()
 
+    times = {'frequency' : 0.0}
+
     frequenties = np.arange(0.5,3.1,0.1,)
     set_amplitude('eastz', 0)
     
-    while get_time() <= (t0 +20):
+    while get_time() <= (t0+20):
+        print(f'(f = {0}) 0-measuring 1: {t0 + 20 - get_time() }')
         read_data()
     t1 = get_time()
+    times['measure time 1'] = t1
+    while get_time() <= (t1+20):
+        print(f'(f = {0}) 0-measuring 2: {t1 + 20 - get_time() }')
+        read_data()
+    t1 = get_time()
+    times['measure time 2'] = t1
+    while get_time() <= (t1+20):
+        print(f'(f = {0}) 0-measuring 3: {t1 + 20 - get_time() }')
+        read_data()
+    t1 = get_time()
+    times['measure time 3'] = t1
+    while get_time() <= (t1+20):
+        print(f'(f = {0}) 0-measuring 4: {t1 + 20 - get_time() }')
+        read_data()
+    t1 = get_time()
+    times['measure time 4'] = t1
 
-    
-    MEASUREMENTTMES = np.append(MEASUREMENTTMES, t1)
+    print(times)
+    MEASUREMENTTMES = np.append(MEASUREMENTTMES, times)
+
+
     
     for f in frequenties:
         try:
@@ -255,47 +276,45 @@ if __name__ == "__main__":
             set_frequentie('eastz', f)
             
             while get_time() <= (t1 +20):
-                print(f'(f = {f}) Setting: {t1 + 20 - get_time() }')
+                print(f'(f = {f:.2f}) Setting: {t1 + 20 - get_time() }')
                 read_data()
             t1 = get_time()
-            times['settingtime': t1]
-            MEASUREMENTTMES = np.append(MEASUREMENTTMES, t1)
-            
+            times['settingtime'] = t1
             while get_time() <= (t1 + 5*periode):
-                print(f'(f = {f}) Measuring 1: {t1 + 5*periode - get_time()}')
+                print(f'(f = {f:.2f}) Measuring 1: {t1 + 5*periode - get_time()}')
                 read_data()
             t1 = get_time()
-            times['measure time 1': t1]
-            MEASUREMENTTMES = np.append(MEASUREMENTTMES, t1)
+            times['measure time 1'] = t1
             while get_time() <= (t1 + 5*periode):
-                print(f'(f = {f}) Measuring 2: {t1 + 5*periode - get_time()}')
+                print(f'(f = {f:2f}) Measuring 2: {t1 + 5*periode - get_time()}')
                 read_data()
             t1 = get_time()
-            times['measure time 2': t1]
-            MEASUREMENTTMES = np.append(MEASUREMENTTMES, t1)
+            times['measure time 2'] = t1
             while get_time() <= (t1 + 5*periode):
-                print(f'(f = {f}) Measuring 3: {t1 + 5*periode - get_time()}')
+                print(f'(f = {f:.2f}) Measuring 3: {t1 + 5*periode - get_time()}')
                 read_data()
             t1 = get_time()
-            times['measure time 3': t1]
-            MEASUREMENTTMES = np.append(MEASUREMENTTMES, t1)
+            times['measure time 3'] = t1
             while get_time() <= (t1 + 5*periode):
-                print(f'(f = {f}) Measuring 4: {t1 + 5*periode - get_time()}')
+                print(f'(f = {f:.2f}) Measuring 4: {t1 + 5*periode - get_time()}')
                 read_data()
             t1 = get_time()
-            times['measure time 4': t1]
-            MEASUREMENTTMES = np.append(MEASUREMENTTMES, t1)
+            times['measure time 4'] = t1
+
+            print(times)
+            MEASUREMENTTMES = np.append(MEASUREMENTTMES, times)
             
         
         except ADwinError as ADE:
             print(f'type: {type(ADE)}\nerror: {traceback.format_exc()}')
         except KeyboardInterrupt:
+            read_data(adwin.Fifo_Full(10))
             break
         except Exception as e:
             print(f'type: {type(e)}\nerror: {traceback.format_exc()}')
     # print([MEASUREMENTTMES[i+1]-MEASUREMENTTMES[i] for i in range(0,len(MEASUREMENTTMES)-1)])
     filename = time.strftime("%Y-%m-%d-%H%M%S",time.localtime(STARTTIME))
-    np.save(f'Meetfiles\data\{filename}',MEASUREMENTTMES)
+    np.save(f'Meetfiles\data\{filename}',MEASUREMENTTMES,True)
 
 
     stop_adwin()
