@@ -230,7 +230,7 @@ if __name__ == "__main__":
     ret_adwin = init_adwin()
     
     if False in [ret_database, ret_adwin]:
-        exit(-1)
+        sys.exit(-1)
     
     t0 = get_time()
 
