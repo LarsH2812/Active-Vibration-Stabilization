@@ -9,15 +9,15 @@
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
 ' Stacksize                      = 1000
-' Info_Last_Save                 = GLMEETPC62  GLMEETPC62\lion
+' Info_Last_Save                 = LAPTOP-NC2U1K33  LAPTOP-NC2U1K33\larsh
 '<Header End>
 #DEFINE FREQ 40000000 '[Hz]
 #DEFINE MAXPOINTS 5000
 #DEFINE ADCMAX 2^16
 #DEFINE VMAX 20 '[V]
 
-DIM DATA_20[5000] AS FLOAT AS FIFO
-DIM DATA_21[5000] AS FLOAT AS FIFO
+DIM DATA_20[5000] as FLOAT as FIFO
+DIM DATA_21[5000] as FLOAT as FIFO
 
 DIM _ AS FLOAT
 

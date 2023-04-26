@@ -9,12 +9,12 @@
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
 ' Stacksize                      = 1000
-' Info_Last_Save                 = GLMEETPC62  GLMEETPC62\lion
+' Info_Last_Save                 = LAPTOP-NC2U1K33  LAPTOP-NC2U1K33\larsh
 '<Header End>
 #define MAXFREQ 40000000
 #define VMAX 20
 #define ADCMAX 2^16
-#DEFINE PI 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647093844
+#DEFINE PI 3.1416
 
 #DEFINE time_ticks PAR_10
 #DEFINE time_s FPAR_10
@@ -61,8 +61,8 @@
 #DEFINE FREQUENCYWZ FPAR_79
 #DEFINE PHASEWZ FPAR_80
 
-dim buf as FLOAT
-dim i as long
+DIM buf as FLOAT
+DIM i as long
 DIM tick, tick_old, delta as LONG
 
 
@@ -78,9 +78,6 @@ init:
   WESTZ = 2
 
 event:
-  
-
-
   EASTXVAL  = driveActuator(EASTX , EASTXAMP , FREQUENCYEX, PHASEEX)
   WESTXVAL  = driveActuator(WESTX , WESTXAMP , FREQUENCYWX, PHASEWX)
   SOUTHYVAL = driveActuator(SOUTHY, SOUTHYAMP, FREQUENCYSY, PHASESY)
@@ -89,10 +86,6 @@ event:
   EASTZVAL  = driveActuator(EASTZ , EASTZAMP , FREQUENCYEZ, PHASEEZ)
   WESTZVAL  = driveActuator(WESTZ , WESTZAMP , FREQUENCYWZ, PHASEWZ)
   
-  if (PAR_80 = 0) THEN
-    end
-  ENDIF
-   
 finish:
   EASTXVAL  = driveActuator(EASTX , 0 , 0, 0)
   WESTXVAL  = driveActuator(WESTX , 0 , 0, 0)
@@ -109,7 +102,7 @@ FUNCTION calcADC(Voltage) as LONG
   CalcADC = Voltage*ADCMAX/VMAX + 0.5*ADCMAX
 ENDFUNCTION
 FUNCTION driveActuator(Actuator, Amplitude, Frequency, Phase) as LONG
-  DIM omega, phi as Float
+  DIM omega, phi as FLOAT
   DIM voltage as LONG
   omega = 2*PI * Frequency
   phi = Phase

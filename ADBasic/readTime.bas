@@ -9,7 +9,7 @@
 ' Optimize                       = Yes
 ' Optimize_Level                 = 1
 ' Stacksize                      = 1000
-' Info_Last_Save                 = GLMEETPC62  GLMEETPC62\lion
+' Info_Last_Save                 = LAPTOP-NC2U1K33  LAPTOP-NC2U1K33\larsh
 '<Header End>
 #DEFINE time_ticks PAR_10
 #DEFINE time_s FPAR_10
