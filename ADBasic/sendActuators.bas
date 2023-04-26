@@ -1,6 +1,6 @@
 '<ADbasic Header, Headerversion 001.001>
 ' Process_Number                 = 2
-' Initial_Processdelay           = 4000
+' Initial_Processdelay           = 10000
 ' Eventsource                    = Timer
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
