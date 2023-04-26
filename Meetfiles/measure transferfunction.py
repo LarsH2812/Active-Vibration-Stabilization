@@ -1,6 +1,6 @@
 import math
 import sqlite3 as sql
-import sys
+import sys, os
 import time
 import traceback
 
@@ -14,8 +14,24 @@ SAMPLEPOINTS = 2500 # [points/batch]
 PERIOD = 1/1.4 * 14
 FOURCALCTIME = 5 * PERIOD
 MEASUREMENTTIME = FOURCALCTIME
-MEASUREMENTTMES = np.array([])
 STARTTIME = time.time()
+
+F_MIN  = 0.5 # [Hz]
+F_MAX  = 3.0 # [Hz]
+F_STEP = 0.05 # [Hz]
+F_POINTS = int((F_MAX-F_MIN)/F_STEP)+1
+
+STARTTIME = time.localtime(STARTTIME)
+current_date = time.strftime("%Y-%m-%d", STARTTIME)
+current_time = time.strftime("%H%M%S", STARTTIME)
+
+save_dir = f'{os.getcwd()}/Meetfiles/data/{current_date}' 
+save_file = f'{save_dir}\{current_date} - {current_time}'
+try:
+    os.mkdir(save_dir)
+except:
+    print('directory already exists')
+
 
 adwin = ADwin(
     DeviceNo= 1,
@@ -56,12 +72,12 @@ def init_adwin():
         adwin.Load_Process(Filename=PROCESS1FILE)   # Load the time keeping process
         adwin.Load_Process(Filename=PROCESS2FILE)   # Load the actuator driving process
         adwin.Load_Process(Filename=PROCESS3FILE)   # Load the guralp data gathering process
-        adwin.Load_Process(Filename=PROCESS4FILE)   # Load the extra data gathering process
+        # adwin.Load_Process(Filename=PROCESS4FILE)   # Load the extra data gathering process
         
         adwin.Start_Process(ProcessNo=1)            # Load the time keeping process
         adwin.Start_Process(ProcessNo=2)            # Load the actuator driving process
         adwin.Start_Process(ProcessNo=3)            # Load the guralp data gathering process
-        adwin.Start_Process(ProcessNo=4)            # Load the extra data gathering process
+        # adwin.Start_Process(ProcessNo=4)            # Load the extra data gathering process
         
         return True
     except Exception as e:
@@ -71,9 +87,15 @@ def stop_adwin():
     adwin.Stop_Process(1)
     adwin.Stop_Process(2)
     adwin.Stop_Process(3)
-    adwin.Stop_Process(4)
+    # adwin.Stop_Process(4)
     
-    
+def get_time():
+    try:
+        adwintime = adwin.Get_FPar(10)
+        return adwintime
+    except:
+        pass
+
 def set_fase(actuator:str = None, fase:float = 0):
     if actuator.lower() not in ['eastx','westx','southy','westy','southz','eastz','westz']:
         raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {['eastx','westx','southy','westy','southz','eastz','westz']}")
@@ -150,13 +172,9 @@ def set_frequentie(actuator:str = None, frequentie:float = 0):
         adwin.Set_FPar(79, frequentie)
     return True
 
-def init_database():
+def init_database(frequentie: None|float = None):
     try:
-        current_time = time.localtime(STARTTIME)
-        current_date = time.strftime("%Y-%m-%d", current_time)
-        current_time = time.strftime("%H%M%S", current_time)
-        
-        db = sql.connect(f'Meetfiles\data\{current_date} - {current_time}.db')
+        db = sql.connect(f'{save_file} ({frequentie:.2f}).db')
         cur = db.cursor()
         cur.executescript("""
                         BEGIN;
@@ -176,23 +194,12 @@ def init_database():
                             rz REAL,
                             FOREIGN KEY(t) REFERENCES guralp(t)
                         );
-                        CREATE TABLE fourier(
-                            f REAL PRIMARY KEY,
-                            txamp REAL, txphase REAL, tyamp REAL, typhase REAL, tzamp REAL, tzphase REAL, 
-                            nxamp REAL, nxphase REAL, nyamp REAL, nyphase REAL, nzamp REAL, nzphase REAL, 
-                            examp REAL, exphase REAL, eyamp REAL, eyphase REAL, ezamp REAL, ezphase REAL
-                        );
-                        CREATE TABLE extras(t REAL PRIMARY KEY, stepper REAL, accoustic REAL);
                         COMMIT;
                         """)
         return True, db, cur
     except Exception as e:
         print(f'type: {type(e)}\nerror: {traceback.format_exc()}')
         return False, None, None
-
-def get_time():
-    adwintime = adwin.Get_FPar(10)
-    return adwintime
 
 def get_data_time():
     datatime = cur_meet_resultaten.execute('SELECT MAX(t) FROM guralp').fetchone()[0]
@@ -210,15 +217,13 @@ def read_data(dataPoints: int = SAMPLEPOINTS):
         dataEY = adwin.GetFifo_Float(8, dataPoints)
         dataEZ = adwin.GetFifo_Float(9, dataPoints)
         dataT = adwin.GetFifo_Float(10, dataPoints)
+        try:
+            data = np.array([dataT, dataTX, dataTY, dataTZ, dataNX, dataNY, dataNZ, dataEX, dataEY, dataEZ])
+            cur_meet_resultaten.executemany('INSERT INTO guralp VALUES (?,?,?,?,?,?,?,?,?,?)', np.transpose(data).tolist())
 
-        data = np.array([dataT, dataTX, dataTY, dataTZ, dataNX, dataNY, dataNZ, dataEX, dataEY, dataEZ])
-        cur_meet_resultaten.executemany('INSERT INTO guralp VALUES (?,?,?,?,?,?,?,?,?,?)', np.transpose(data).tolist())
-        
-        dataStepper = adwin.GetFifo_Float(20, dataPoints)
-        dataAccoustic = adwin.GetFifo_Float(21, dataPoints)
-        data = np.array([dataT, dataStepper, dataAccoustic])
-        cur_meet_resultaten.executemany('INSERT INTO extras VALUES (?,?,?)', np.transpose(data).tolist())
-        db_meet_resultaten.commit()
+            db_meet_resultaten.commit()
+        except sql.IntegrityError as sql_error:
+            print(f'Error: {sql_error}\nContinuing...')
         
         return True
     return False
@@ -226,88 +231,86 @@ def read_data(dataPoints: int = SAMPLEPOINTS):
 
 
 if __name__ == "__main__":
-    ret_database, db_meet_resultaten, cur_meet_resultaten = init_database()
-    ret_adwin = init_adwin()
-    
-    if False in [ret_database, ret_adwin]:
-        sys.exit(-1)
-    
-    t0 = get_time()
-
-    MEASUREMENTTMES = np.append(MEASUREMENTTMES, 0.0)
-
-    frequenties = np.arange(0.5,3.1,0.1,)
-    set_amplitude('eastz', 0)
-    
-    while get_time() <= (t0+20):
-        print(f'(f = {0}) 0-measuring 1: {t0 + 20 - get_time() }')
-        read_data()
-    t1 = get_time()
-    MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
-    while get_time() <= (t1+20):
-        print(f'(f = {0}) 0-measuring 2: {t1 + 20 - get_time() }')
-        read_data()
-    t1 = get_time()
-    MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
-    while get_time() <= (t1+20):
-        print(f'(f = {0}) 0-measuring 3: {t1 + 20 - get_time() }')
-        read_data()
-    t1 = get_time()
-    MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
-    while get_time() <= (t1+20):
-        print(f'(f = {0}) 0-measuring 4: {t1 + 20 - get_time() }')
-        read_data()
-    t1 = get_time()
-    MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
-    
+    once = True
+    frequenties = np.linspace(F_MIN, F_MAX, F_POINTS)
+    print(frequenties)
+    time.sleep(0.5)
+    t_passed = 0
+    t_total = 0
     for f in frequenties:
+        t_total += 500/f
+        t_total += 20
+        t_total += 500/f
+
+    print(f'{t_total//3600:.0f}:{t_total%60:.0f}')
+
+    for f in frequenties:
+
+        ret_database, db_meet_resultaten, cur_meet_resultaten = init_database(f)
+        ret_adwin = init_adwin()
+        MEASUREMENTTMES = np.array([])
+        if False in [ret_database, ret_adwin]:
+            sys.exit(-1)
+        
+        t0 = get_time()
+        periode = 1 / f
+        set_amplitude('eastz', 2)
+        set_frequentie('eastz', 0)
+
+        MEASUREMENTTMES = np.append(MEASUREMENTTMES, 0.0)
+        MEASUREMENTTMES = np.append(MEASUREMENTTMES, t0)
+        print(f'0-meting')
         try:
-            MEASUREMENTTMES = np.append(MEASUREMENTTMES,f)
-            periode = 1 / f
-            print(f)
-            
-            
-            set_amplitude('eastz', 1)
-            set_frequentie('eastz', f)
-            
-            while get_time() <= (t1 +20):
-                print(f'(f = {f:.2f}) Setting: {t1 + 20 - get_time() }')
-                read_data()
+            while get_time() <= (t0+500*periode):
+                try:
+                    print(f'[{t_passed/t_total *100:>3.0f}%] 0 meettijd {f:.1f}/{F_MAX:.1f}:\t {(t0 + 500*periode) - get_time()}')
+                    read_data()
+                except Exception as e:
+                    print(f'type:\t{type(e)}\nstring:\t{traceback.format_exc()}')
+                    break
             t1 = get_time()
             MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
-            while get_time() <= (t1 + 5*periode):
-                print(f'(f = {f:.2f}) Measuring 1: {t1 + 5*periode - get_time()}')
-                read_data()
+            t_passed += 500*periode
+            try:
+                MEASUREMENTTMES = np.append(MEASUREMENTTMES,f)
+                
+                print(f)
+                set_amplitude('eastz', 2)
+                set_frequentie('eastz', f)
+                
+                t1 = get_time()
+                while get_time() <= (t1 + 20):
+                    print(f'[{t_passed/t_total *100:>3.0f}%] insteltijd {f:.1f}/{F_MAX:.1f}:\t {(t1 + 20) - get_time()}')
+                    read_data()
+                t1 = get_time()
+                MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
+                t_passed += 20
+                print(f'meting {1}: Freq= {f}')
+                while get_time() <= (t1 + 500*periode):
+                    print(f'[{t_passed/t_total *100:>3.0f}%] meettijd {f:.1f}/{F_MAX:.1f}:\t {(t1 + 500*periode) - get_time()}')
+                    read_data()
+            except KeyboardInterrupt:
+                pass
+
             t1 = get_time()
             MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
-            while get_time() <= (t1 + 5*periode):
-                print(f'(f = {f:2f}) Measuring 2: {t1 + 5*periode - get_time()}')
-                read_data()
-            t1 = get_time()
-            MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
-            while get_time() <= (t1 + 5*periode):
-                print(f'(f = {f:.2f}) Measuring 3: {t1 + 5*periode - get_time()}')
-                read_data()
-            t1 = get_time()
-            MEASUREMENTTMES = np.append(MEASUREMENTTMES, t1)
-            while get_time() <= (t1 + 5*periode):
-                print(f'(f = {f:.2f}) Measuring 4: {t1 + 5*periode - get_time()}')
-                read_data()
-            t1 = get_time()
-            MEASUREMENTTMES = np.append(MEASUREMENTTMES,t1)
-            
+            t_passed += 500*periode
         
         except ADwinError as ADE:
             print(f'type: {type(ADE)}\nerror: {traceback.format_exc()}')
         except KeyboardInterrupt:
-            read_data(adwin.Fifo_Full(10))
-            break
+            pass
         except Exception as e:
             print(f'type: {type(e)}\nerror: {traceback.format_exc()}')
-    # print([MEASUREMENTTMES[i+1]-MEASUREMENTTMES[i] for i in range(0,len(MEASUREMENTTMES)-1)])
-    filename = time.strftime("%Y-%m-%d-%H%M%S",time.localtime(STARTTIME))
-    np.save(f'Meetfiles\data\{filename}',MEASUREMENTTMES,True)
+        # print([MEASUREMENTTMES[i+1]-MEASUREMENTTMES[i] for i in range(0,len(MEASUREMENTTMES)-1)])
+        read_data(adwin.Fifo_Full(10))
+        print('Done')
+        np.save(f'{save_file} ({f:.2f})',MEASUREMENTTMES,allow_pickle= True)
 
 
-    stop_adwin()
-    db_meet_resultaten.close()
+        stop_adwin()
+        db_meet_resultaten.close()
+
+        print(f'''Saved file in:
+                {save_file} ({f:.2f}).db
+                {save_file} ({f:.2f}).npy''')

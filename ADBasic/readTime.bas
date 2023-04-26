@@ -1,6 +1,6 @@
 '<ADbasic Header, Headerversion 001.001>
 ' Process_Number                 = 1
-' Initial_Processdelay           = 1000
+' Initial_Processdelay           = 10000
 ' Eventsource                    = Timer
 ' Control_long_Delays_for_Stop   = No
 ' Priority                       = High
@@ -24,6 +24,7 @@ event:
   delta = tick - tick_old
   time_ticks = time_ticks + delta
   time_s = time_s + cvt_Tick2ms(delta)
+  
   tick_old = tick
   
 FUNCTION cvt_Tick2ms(Tick) as FLOAT
