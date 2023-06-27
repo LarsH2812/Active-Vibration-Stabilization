@@ -16,6 +16,29 @@ FOURCALCTIME = 5 * PERIOD
 MEASUREMENTTIME = FOURCALCTIME
 STARTTIME = time.time()
 
+ACTUATOREN = {'eastx' :{'frequentie' : 61,
+                        'amplitude'  : 60,
+                        'fase'       : 62},
+              'westx' :{'frequentie' : 64,
+                        'amplitude'  : 63,
+                        'fase'       : 65},
+              'southy':{'frequentie' : 67,
+                        'amplitude'  : 66,
+                        'fase'       : 68},
+              'westy' :{'frequentie' : 70,
+                        'amplitude'  : 69,
+                        'fase'       : 71},
+              'southz':{'frequentie' : 73,
+                        'amplitude'  : 72,
+                        'fase'       : 74},
+              'eastz' :{'frequentie' : 76,
+                        'amplitude'  : 75,
+                        'fase'       : 77},
+              'westz' :{'frequentie' : 79,
+                        'amplitude'  : 78,
+                        'fase'       : 80},
+             }
+
 F_MIN  = 0.5 # [Hz]
 F_MAX  = 3.0 # [Hz]
 F_STEP = 0.05 # [Hz]
@@ -97,80 +120,27 @@ def get_time():
         pass
 
 def set_fase(actuator:str = None, fase:float = 0):
-    if actuator.lower() not in ['eastx','westx','southy','westy','southz','eastz','westz']:
-        raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {['eastx','westx','southy','westy','southz','eastz','westz']}")
-    if actuator.lower() == 'eastx':
-        adwin.Set_FPar(62, fase)
-    elif actuator.lower() == 'westx':
-        adwin.Set_FPar(65, fase)
-    elif actuator.lower() == 'southy':
-        adwin.Set_FPar(68, fase)
-    elif actuator.lower() == 'westy':
-        adwin.Set_FPar(71, fase)
-    elif actuator.lower() == 'southz':
-        adwin.Set_FPar(74, fase)
-    elif actuator.lower() == 'eastz':
-        adwin.Set_FPar(77, fase)
-    elif actuator.lower() == 'westz':
-        adwin.Set_FPar(80, fase)
+    if actuator.lower() not in ACTUATOREN.keys():
+        raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {ACTUATOREN.keys()}")
+    adwin.Set_FPar(ACTUATOREN[actuator]['fase'], fase)
     return True
 
 def set_amplitude(actuator:str = None, amplitude:float = 0):
-    if actuator.lower() not in ['eastx','westx','southy','westy','southz','eastz','westz']:
-        raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {['eastx','westx','southy','westy','southz','eastz','westz']}")
-    if actuator.lower() == 'eastx':
-        adwin.Set_FPar(60, amplitude)
-    elif actuator.lower() == 'westx':
-        adwin.Set_FPar(63, amplitude)
-    elif actuator.lower() == 'southy':
-        adwin.Set_FPar(66, amplitude)
-    elif actuator.lower() == 'westy':
-        adwin.Set_FPar(69, amplitude)
-    elif actuator.lower() == 'southz':
-        adwin.Set_FPar(72, amplitude)
-    elif actuator.lower() == 'eastz':
-        adwin.Set_FPar(75, amplitude)
-    elif actuator.lower() == 'westz':
-        adwin.Set_FPar(78, amplitude)
+    if actuator.lower() not in ACTUATOREN.keys():
+        raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {ACTUATOREN.keys()}")
+    adwin.Set_FPar(ACTUATOREN[actuator]['amplitude'], amplitude)
+    return True
+
+def set_frequentie(actuator:str = None, frequentie:float = 0):
+    if actuator.lower() not in ACTUATOREN.keys():
+        raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {ACTUATOREN.keys()}")
+    adwin.Set_FPar(ACTUATOREN[actuator]['frequentie'], frequentie)
     return True
 
 def get_amplitude(actuator:str = None):
-    if actuator.lower() not in ['eastx','westx','southy','westy','southz','eastz','westz']:
-        raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {['eastx','westx','southy','westy','southz','eastz','westz']}")
-    if actuator.lower() == 'eastx':
-        ret:float = adwin.Get_FPar(60)
-    elif actuator.lower() == 'westx':
-        ret:float = adwin.Get_FPar(63)
-    elif actuator.lower() == 'southy':
-        ret:float = adwin.Get_FPar(66)
-    elif actuator.lower() == 'westy':
-        ret:float = adwin.Get_FPar(69)
-    elif actuator.lower() == 'southz':
-        ret:float = adwin.Get_FPar(72)
-    elif actuator.lower() == 'eastz':
-        ret:float = adwin.Get_FPar(75)
-    elif actuator.lower() == 'westz':
-        ret:float = adwin.Get_FPar(78)
-    return ret
-        
-def set_frequentie(actuator:str = None, frequentie:float = 0):
-    if actuator.lower() not in ['eastx','westx','southy','westy','southz','eastz','westz']:
-        raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {['eastx','westx','southy','westy','southz','eastz','westz']}")
-    if actuator.lower() == 'eastx':
-        adwin.Set_FPar(61, frequentie)
-    elif actuator.lower() == 'westx':
-        adwin.Set_FPar(64, frequentie)
-    elif actuator.lower() == 'southy':
-        adwin.Set_FPar(67, frequentie)
-    elif actuator.lower() == 'westy':
-        adwin.Set_FPar(70, frequentie)
-    elif actuator.lower() == 'southz':
-        adwin.Set_FPar(73, frequentie)
-    elif actuator.lower() == 'eastz':
-        adwin.Set_FPar(76, frequentie)
-    elif actuator.lower() == 'westz':
-        adwin.Set_FPar(79, frequentie)
-    return True
+    if actuator.lower() not in ACTUATOREN.keys():
+        raise ValueError(f"Specified actuator is not correct.\n\t\tMust be one of the following {ACTUATOREN.keys()}")
+    return float(adwin.Get_FPar(ACTUATOREN[actuator]['amplitude']))
 
 def init_database(frequentie: None|float = None):
     try:
